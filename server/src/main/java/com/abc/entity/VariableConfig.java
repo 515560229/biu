@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.enums.IdType;
 import java.io.Serializable;
 import java.util.Date;
 
-@TableName("sys_user_role")
+@TableName("t_variable_config")
 public class VariableConfig implements Serializable {
 
     @TableId(value = "name", type = IdType.INPUT)

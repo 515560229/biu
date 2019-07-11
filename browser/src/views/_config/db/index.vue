@@ -2,7 +2,7 @@
   <div class="app-container">
     <!--查询  -->
     <el-row>
-      <el-input style="width:200px;" v-model="tableQuery.nick" placeholder="变量名"></el-input>
+      <el-input style="width:200px;" v-model="tableQuery.nick" placeholder="昵称"></el-input>
       <span style="margin-right: 15px;"></span>
       <el-tooltip class="item" content="搜索" placement="top" >
         <el-button icon="el-icon-search" circle @click="fetchData(1)" v-perm="'b:user:query'"></el-button>
