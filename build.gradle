@@ -1,3 +1,5 @@
-group 'com.abc'
+group 'com.javaleague'
 version '1.0'
 
+dependencies {
+}
