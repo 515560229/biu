@@ -20,7 +20,7 @@
               element-loading-text="加载中"
               border fit highlight-current-row>
       <el-table-column prop="name" label="变量名"></el-table-column>
-      <el-table-column prop="value" label="登录值"></el-table-column>
+      <el-table-column prop="value" label="变量值"></el-table-column>
       <el-table-column prop="desc" label="描述"></el-table-column>
       <el-table-column prop="time" label="创建时间">
         <template slot-scope="scope">
@@ -81,10 +81,9 @@
 
 <script>
 
-  import optionApi from '@/api/option'
   import variableApi from '@/api/config/variable'
   import {parseTime, resetTemp} from '@/utils'
-  import {root,confirm,pageParamNames} from '@/utils/constants'
+  import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
 
   export default {
@@ -106,7 +105,9 @@
         tableLoading: false,
         tableData: [],
         tableQuery: {
-          nick: null
+          name: null,
+          value: null,
+          desc: null
         },
         tablePage: {
           current: null,
@@ -246,11 +247,9 @@
         this.$refs['dataForm'].validate((valid) => {
           if (!valid) return;
           variableApi.addVariable(this.temp).then((res) => {
-            this.temp.uid = res.data.uid;//后台传回来新增记录的id
-            this.temp.created = res.data.created;//后台传回来新增记录的时间
-            this.temp.roleList = []
-            this.tableData.unshift(Object.assign({},this.temp))
-            ++this.tablePage.total
+            this.temp = res.data.data;
+            this.tableData.unshift(Object.assign({},this.temp));
+            ++this.tablePage.total;
             this.dialogFormVisible = false
             this.$message.success("添加成功")
           })

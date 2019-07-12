@@ -2,14 +2,12 @@ package com.abc.controller;
 
 
 import com.abc.annotation.PermInfo;
-import com.abc.entity.SysUser;
 import com.abc.entity.VariableConfig;
 import com.abc.service.VariableConfigService;
 import com.abc.util.PageUtils;
 import com.abc.vo.Json;
 import com.abc.vo.VariableQueryConditionVo;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
