@@ -10,13 +10,17 @@ import com.abc.vo.Json;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
+import com.mysql.jdbc.Driver;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 
 @PermInfo(value = "通用配置模块", pval = "a:commonConfig:接口")
@@ -34,7 +38,11 @@ public class CommonConfigController {
     @PostMapping
     public Json add(@RequestBody CommonConfigVo commonConfigVo) {
         String oper = "add common config";
-        CommonConfig objInDB = commonConfigService.selectOne(new EntityWrapper<CommonConfig>().eq("name", commonConfigVo.getName()));
+        CommonConfig objInDB = commonConfigService.selectOne(
+                new EntityWrapper<CommonConfig>()
+                        .eq("name", commonConfigVo.getName())
+                        .eq("type", commonConfigVo.getType())
+        );
         if (objInDB != null) {
             return Json.fail(oper, "该名称已被使用");
         }
@@ -43,6 +51,26 @@ public class CommonConfigController {
 
         boolean success = commonConfigService.insert(commonConfigVo.toEntity());
         return Json.result(oper, success, commonConfigVo);
+    }
+
+    @PermInfo("测试连接")
+    @RequiresPermissions("a:config:common:add")
+    @PostMapping(value = "/db/testDBConnection")
+    public Json testDBConnection(@RequestBody CommonConfigVo commonConfigVo) {
+        String oper = "testDBConnection";
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(Driver.class.getName());
+        dataSource.setUrl(String.format("jdbc:mysql://%s:%s/%s", commonConfigVo.getDataBaseConfig().getHost(),
+                commonConfigVo.getDataBaseConfig().getPort(),
+                commonConfigVo.getDataBaseConfig().getDbName()));
+        dataSource.setUsername(commonConfigVo.getDataBaseConfig().getUsername());
+        dataSource.setPassword(commonConfigVo.getDataBaseConfig().getPassword());
+        try {
+            dataSource.getConnection();
+            return Json.result(oper, true);
+        } catch (SQLException e) {
+            return Json.result(oper, false).msg(String.format("%s:%s", e.getErrorCode(), e.getMessage()));
+        }
     }
 
     @PermInfo("更新通用配置")
@@ -88,16 +116,17 @@ public class CommonConfigController {
             logger.info("{}, body: {}", oper, JSON.toJSONString(queryCondition));
         }
         EntityWrapper<CommonConfig> wrapper = new EntityWrapper<>();
-        wrapper.eq("type", queryCondition.getType());
+        wrapper.eq("`type`", queryCondition.getType());
         if (StringUtils.isNotBlank(queryCondition.getKey())) {
-            wrapper.like(true, "name", queryCondition.getKey());
-            wrapper.or().like(true, "desc", queryCondition.getKey());
+            wrapper.andNew().like(true, "`name`", queryCondition.getKey());
+            wrapper.or().like(true, "`desc`", queryCondition.getKey());
         }
         Page<CommonConfig> page = commonConfigService.selectPage(PageUtils.getPageParam(queryCondition), wrapper);
         if (!page.getRecords().isEmpty()) {
-            page.getRecords().forEach(item -> {
-                item = new CommonConfigVo(item);
-            });
+            for (int i = 0; i < page.getRecords().size(); i++) {
+                CommonConfigVo vo = new CommonConfigVo(page.getRecords().get(i));
+                page.getRecords().set(i, vo);
+            }
         }
         return Json.succ(oper).data("page", page);
     }

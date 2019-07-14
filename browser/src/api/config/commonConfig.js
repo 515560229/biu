@@ -35,8 +35,16 @@ export default {
 
   deleteCommonConfig(id) {
     return request({
-      url: '/config/common/id',
+      url: '/config/common/' + id,
       method: 'delete'
+    })
+  },
+
+  testConnection(data) {
+    return request({
+      url: '/config/common/db/testDBConnection',
+      method: 'post',
+      data
     })
   }
 }

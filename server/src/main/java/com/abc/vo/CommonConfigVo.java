@@ -17,9 +17,18 @@ public class CommonConfigVo extends CommonConfig{
         this.dataBaseConfig = dataBaseConfig;
     }
 
+    public CommonConfigVo() {
+        //do nothing
+    }
+
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
-            setDataBaseConfig(JSON.parseObject(getValue(), DataBaseConfig.class));
+            setDataBaseConfig(JSON.parseObject(commonConfig.getValue(), DataBaseConfig.class));
+        }
+        try {
+            BeanUtils.copyProperties(this, commonConfig);
+        } catch (Exception e) {
+            //do nothing
         }
 
         this.setValue(null);
@@ -33,48 +42,8 @@ public class CommonConfigVo extends CommonConfig{
             //do nothing
         }
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
-            setValue(JSON.toJSONString(getDataBaseConfig()));
+            commonConfig.setValue(JSON.toJSONString(getDataBaseConfig()));
         }
         return commonConfig;
     }
-
-    public static class DataBaseConfig  {
-        private String host;
-        private int port;
-        private String dbName;
-        private String dbType = "mysql";//default mysql
-
-        public String getHost() {
-            return host;
-        }
-
-        public void setHost(String host) {
-            this.host = host;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        public void setPort(int port) {
-            this.port = port;
-        }
-
-        public String getDbName() {
-            return dbName;
-        }
-
-        public void setDbName(String dbName) {
-            this.dbName = dbName;
-        }
-
-        public String getDbType() {
-            return dbType;
-        }
-
-        public void setDbType(String dbType) {
-            this.dbType = dbType;
-        }
-    }
-
 }
