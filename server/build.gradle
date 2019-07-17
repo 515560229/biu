@@ -35,6 +35,12 @@ repositories {
 
 //项目依赖
 dependencies {
+    //lombok
+    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+    compileOnly 'org.projectlombok:lombok:1.18.2'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.2'
+    testCompileOnly 'org.projectlombok:lombok:1.18.2'
+    
     //spring boot的starter
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-aop'

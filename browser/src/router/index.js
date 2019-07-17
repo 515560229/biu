@@ -106,6 +106,19 @@ export const asyncRouterMap = [
       }
     ]
   },
+  {
+    path: '/operator',
+    component: Layout,
+    meta: {perm: 'm:operator', title: '操作', icon: 'chart'},
+    children: [
+      {
+        path: 'operator',
+        name: 'operator',
+        component: _import('_operator/dbQueryIndex'),
+        meta: {perm: 'm:config:variable', title: '数据库', icon: 'chart', noCache: true}
+      }
+    ]
+  },
   /*
   {
     path: '/menu1',

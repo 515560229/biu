@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
 

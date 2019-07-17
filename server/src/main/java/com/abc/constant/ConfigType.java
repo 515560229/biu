@@ -1,7 +1,9 @@
 package com.abc.constant;
 
 public enum ConfigType {
-    DB_CONFIG("db");
+    DB_CONFIG("db"),
+    DB_QUERY_CONFIG("dbQuery")
+    ;
 
 
     private String value;

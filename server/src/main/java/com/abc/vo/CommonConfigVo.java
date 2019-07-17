@@ -2,28 +2,25 @@ package com.abc.vo;
 
 import com.abc.constant.ConfigType;
 import com.abc.entity.CommonConfig;
+import com.abc.vo.commonconfigvoproperty.DataBaseConfig;
+import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
 import com.alibaba.fastjson.JSON;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.beanutils.BeanUtils;
 
+@Data
+@NoArgsConstructor
 public class CommonConfigVo extends CommonConfig{
 
     private DataBaseConfig dataBaseConfig;
-
-    public DataBaseConfig getDataBaseConfig() {
-        return dataBaseConfig;
-    }
-
-    public void setDataBaseConfig(DataBaseConfig dataBaseConfig) {
-        this.dataBaseConfig = dataBaseConfig;
-    }
-
-    public CommonConfigVo() {
-        //do nothing
-    }
+    private DbQueryConfig dbQueryConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
             setDataBaseConfig(JSON.parseObject(commonConfig.getValue(), DataBaseConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.DB_QUERY_CONFIG.getValue())) {
+            setDbQueryConfig(JSON.parseObject(commonConfig.getValue(), DbQueryConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -43,6 +40,8 @@ public class CommonConfigVo extends CommonConfig{
         }
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getDataBaseConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.DB_QUERY_CONFIG.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getDbQueryConfig()));
         }
         return commonConfig;
     }
