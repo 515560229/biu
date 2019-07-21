@@ -285,6 +285,15 @@ export function resetTemp(temp) {
     }
   }
   return temp;
+}
 
-
+export function isJsonString(str) {
+  try {
+    let parse = JSON.parse(str);
+    if (typeof parse == "object") {
+      return true;
+    }
+  } catch (e) {
+  }
+  return false;
 }

@@ -128,6 +128,7 @@
 
       return {
         type: "db",
+        storageKey: "dbConfig",
         parseTime: parseTime,
         tableLoading: false,
         tableData: [],
@@ -172,9 +173,24 @@
         isIndeterminate: true,
       }
     },
-
+    mounted() {
+    },
+    destroyed() {
+      // 在destroy后保存数据
+      localStorage.setItem(this.storageKey, JSON.stringify(this._data));
+    },
     created() {
-      this.fetchData()
+      // 在mount后还原数据, 实现页面数据状态保存
+      let tempData = JSON.parse(localStorage.getItem(this.storageKey));
+      for (let key in this._data) {
+        if (tempData[key]) {
+          //原来有值才使用
+          this.$set(this._data, key, tempData[key]);
+        }
+      }
+      if (this.tableQuery.key == '') {
+        this.fetchData()
+      }
     },
 
     watch: {
@@ -185,6 +201,8 @@
     },//watch
 
     methods: {
+
+
       //全选
       handleCheckAllChange(val) {
         let allRids = this.roleOptions.map(role => role.id)

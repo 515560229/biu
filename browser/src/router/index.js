@@ -53,7 +53,25 @@ export default new Router({
 })
 
 export const asyncRouterMap = [
-
+  {
+    path: '/examples',
+    component: Layout,
+    meta: {title: '练习', icon: 'chart'},
+    children: [
+      {
+        path: 'examples1',
+        name: 'examples1',
+        component: _import('_examples/mysqlEditor'),
+        meta: {title: 'MySQLEditor', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'examples2',
+        name: 'examples2',
+        component: _import('_examples/mysqlEditor2'),
+        meta: {title: 'MySQLEditor2', icon: 'chart', noCache: false}
+      }
+    ]
+  },
   {
     path: '/system',
     component: Layout,
@@ -96,13 +114,13 @@ export const asyncRouterMap = [
         path: 'variable',
         name: 'variable',
         component: _import('_config/variable/index'),
-        meta: {perm: 'm:config:variable', title: '全局变量', icon: 'chart', noCache: true}
+        meta: {perm: 'm:config:variable', title: '全局变量', icon: 'chart', noCache: false}
       },
       {
         path: 'variable2',
         name: 'variable2',
         component: _import('_config/db/index'),
-        meta: {perm: 'm:config:db', title: '数据库', icon: 'chart', noCache: true}
+        meta: {perm: 'm:config:db', title: '数据源', icon: 'chart', noCache: false}
       }
     ]
   },
@@ -112,10 +130,16 @@ export const asyncRouterMap = [
     meta: {perm: 'm:operator', title: '操作', icon: 'chart'},
     children: [
       {
-        path: 'operator',
-        name: 'operator',
+        path: 'dbQueryIndex',
+        name: 'dbQueryIndex',
         component: _import('_operator/dbQueryIndex'),
-        meta: {perm: 'm:config:variable', title: '数据库', icon: 'chart', noCache: true}
+        meta: {perm: 'm:config:variable', title: '数据库1', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'kafka',
+        name: 'kafka',
+        component: _import('_operator/dbQueryIndex2'),
+        meta: {perm: 'm:config:variable', title: '数据库2', icon: 'chart', noCache: false}
       }
     ]
   },

@@ -16,3 +16,5 @@ select * from t_common_config;
 SELECT COUNT(1) FROM t_common_config WHERE (`type` = 'dbQuery') AND (`name` LIKE '%1%' OR `desc` LIKE '%1%');
 
 SELECT * FROM t_common_config WHERE (`type` = 'dbQuery');
+
+

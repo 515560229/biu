@@ -57,8 +57,8 @@ service.interceptors.response.use(
    */
   err => {
     console.error('request err: %o', err)// for debug
-    Message({message: error.message,type: 'error',duration: 5000})
-    return Promise.reject(error)
+    Message({message: err.message,type: 'error',duration: 5000})
+    return Promise.reject(err)
   }
 
 )

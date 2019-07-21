@@ -20,6 +20,9 @@ public interface Codes {
     /** shiro相关的错误 */
     int SHIRO_ERR = 4444;
 
+    /** SQL相关的错误 */
+    int SQL_ERR = 4445;
+
     /** 服务端异常 */
     int SERVER_ERR = 5500;
 

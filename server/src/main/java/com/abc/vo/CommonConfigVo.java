@@ -6,12 +6,16 @@ import com.abc.vo.commonconfigvoproperty.DataBaseConfig;
 import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
 import com.alibaba.fastjson.JSON;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.beanutils.BeanUtils;
 
 @Data
 @NoArgsConstructor
-public class CommonConfigVo extends CommonConfig{
+@EqualsAndHashCode(callSuper = false)
+public class CommonConfigVo extends CommonConfig implements PageVo{
+    private int current;
+    private int size;
 
     private DataBaseConfig dataBaseConfig;
     private DbQueryConfig dbQueryConfig;

@@ -7,6 +7,7 @@ import com.abc.util.PageUtils;
 import com.abc.vo.CommonConfigQueryCondition;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
+import com.abc.vo.Option;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Optional;
 
 @PermInfo(value = "通用配置模块", pval = "a:commonConfig:接口")
 @RestController
@@ -37,13 +39,8 @@ public class CommonConfigController {
     @PostMapping
     public Json add(@RequestBody CommonConfigVo commonConfigVo) {
         String oper = "add common config";
-        CommonConfig objInDB = commonConfigService.selectOne(
-                new EntityWrapper<CommonConfig>()
-                        .eq("name", commonConfigVo.getName())
-                        .eq("type", commonConfigVo.getType())
-        );
-        if (objInDB != null) {
-            return Json.fail(oper, "该名称已被使用");
+        if (existsByName(commonConfigVo) > 0) {
+            return Json.fail(oper, String.format("该名称[%s]已被使用", commonConfigVo.getName()));
         }
         commonConfigVo.setCreated(new Date());
         commonConfigVo.setUpdated(commonConfigVo.getCreated());
@@ -81,16 +78,33 @@ public class CommonConfigController {
             logger.info(oper, JSON.toJSONString(commonConfigVo));
         }
 
-        CommonConfig commonConfigDB = commonConfigService.selectOne(new EntityWrapper<CommonConfig>().eq("name", commonConfigVo.getName()));
-        if (commonConfigDB == null) {
-            return Json.fail(oper, "变量不存在");
+        if (!existsByName(commonConfigVo).equals(commonConfigVo.getId())) {
+            return Json.fail(oper, String.format("该名称[%s]已被使用", commonConfigVo.getName()));
         }
+
+        CommonConfig commonConfigDB = commonConfigService.selectById(commonConfigVo.getId());
+        if (commonConfigDB == null) {
+            return Json.fail(oper, "记录不存在");
+        }
+        commonConfigDB.setName(commonConfigVo.getName());
         commonConfigDB.setValue(commonConfigVo.toEntity().getValue());
         commonConfigDB.setDesc(commonConfigVo.getDesc());
         commonConfigDB.setUpdated(new Date());
 
         boolean success = commonConfigService.updateById(commonConfigDB);
         return Json.result(oper, success, commonConfigDB);
+    }
+
+    private Long existsByName(CommonConfigVo commonConfigVo) {
+        CommonConfig objInDB = commonConfigService.selectOne(
+                new EntityWrapper<CommonConfig>()
+                        .eq("name", commonConfigVo.getName())
+                        .eq("type", commonConfigVo.getType())
+        );
+        if (objInDB != null) {
+            return objInDB.getId();
+        }
+        return -1L;
     }
 
     @PermInfo("删除通用配置")

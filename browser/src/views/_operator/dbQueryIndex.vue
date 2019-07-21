@@ -3,7 +3,7 @@
     <!--查询  -->
     <el-row>
       <el-select
-        v-perm="'b:operator:dbQuery:query'" v-model="dbQueryNameId" filterable remote clearable placeholder="请输入查询名称"
+        v-perm="'b:operator:dbQuery:query'" size="small" v-model="dbQueryNameId" filterable remote clearable placeholder="请输入查询名称"
         :remote-method="findDbQueryNames"
         :loading="dbQueryNamesLoading">
         <el-option
@@ -13,7 +13,7 @@
           :value="item.id">
         </el-option>
       </el-select>
-      <span style="margin-right: 15px;"></span>
+      <span style="margin-right: 45px;"></span>
       <el-tooltip content="执行" placement="top">
         <el-button type="primary" icon="el-icon-caret-right" circle plain @click="executeData"
                    v-perm="'b:operator:common:execute'">
@@ -30,7 +30,21 @@
         </el-button>
       </el-tooltip>
     </el-row>
-
+    <!--列表-->
+    <el-table style="width: 100%"
+              :data="listResults"
+              v-if="listShow"
+              v-loading.body="listLoading"
+              element-loading-text="加载中"
+              border fit highlight-current-row
+              @cell-dblclick="handleCellDbClick"
+    >
+      <el-table-column :prop="column" :label="column" v-for="(column,index) in listColumns" :show-overflow-tooltip='true' :key="index">
+        <template slot-scope="scope">
+          <span v-text="scope.row[column]"></span>
+        </template>
+      </el-table-column>
+    </el-table>
     <!--弹出窗口：新增/编辑-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="80%">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="left" label-width="120px">
@@ -63,20 +77,26 @@
         <el-button v-else type="primary" @click="updateData">确定</el-button>
       </div>
     </el-dialog>
+    <el-dialog :visible.sync="formatDialogVisible" width="60%">
+      <json-editor :value="needFormatValue"></json-editor>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 
   import commonConfigApi from '@/api/config/commonConfig'
-  import {parseTime, resetTemp} from '@/utils'
+  import dbOperateApi from '@/api/operate/dbOperateApi'
+  import {parseTime, resetTemp, isJsonString} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
+  import {jsonEditor} from '@/components/JsonEditor'
+  import JsonEditor from "../../components/JsonEditor/index";
 
   export default {
 
     name: 'DbQueryManage',
-
+    components: {JsonEditor},
     data() {
 
       let validateNotNull = (rule, value, callback) => {
@@ -89,7 +109,9 @@
 
       return {
         type: "dbQuery",
+        storageKey: "dbQuery",
         parseTime: parseTime,
+        isJsonString: isJsonString,
         dbQueryNameId: null,
         dbQueryNamesLoading: false,
         dbQueryNames: [],
@@ -117,6 +139,14 @@
           key: null,
           type: "db"
         },
+        //查询结果相关
+        listResults: [],//表数据
+        listColumns: [],//表头
+        listLoading: false,//是否显示加载框
+        listShow: false,//是否显示表格
+        //格式化相关
+        needFormatValue: null,
+        formatDialogVisible: false,
 
         dialogFormVisible: false,
         editRolesDialogVisible: false,
@@ -145,6 +175,23 @@
     },
 
     created() {
+      // 在create后还原数据, 实现页面数据状态保存
+      let tempData = JSON.parse(localStorage.getItem(this.storageKey));
+      for (let key in this._data) {
+        if (tempData[key]) {
+          //原来有值才使用
+          this.$set(this._data, key, tempData[key]);
+        }
+      }
+    },
+    mounted() {
+    },
+    beforeDestroy() {
+
+    },
+    destroyed() {
+      // 在destroy后保存数据
+      localStorage.setItem(this.storageKey, JSON.stringify(this._data));
     },
 
     watch: {},//watch
@@ -162,6 +209,13 @@
           })
         } else {
           this.dbQueryNamesData = [];
+        }
+      },
+      handleCellDbClick(row, column, cell, event) {
+        let str = row[column.property];
+        if (isJsonString(str)) {
+          this.formatDialogVisible = true;
+          this.needFormatValue = JSON.parse(row[column.property]);
         }
       },
       handleCreate() {
@@ -191,13 +245,29 @@
           commonConfigApi.deleteCommonConfig(this.dbQueryNameId).then(res => {
             this.$message.success("删除成功");
             this.dbQueryNamesData = [];
+            this.dbQueryNameId = null;
           })
         }).catch(() => {
           this.$message.info("已取消删除")
         });
       },
       executeData() {
-
+        if (this.dbQueryNamesData) {
+          for (let i = 0; i < this.dbQueryNamesData.length; i++) {
+            if (this.dbQueryNamesData[i].id == this.dbQueryNameId) {
+              this.listLoading = true;
+              dbOperateApi.execute(this.dbQueryNamesData[i]).then(res => {
+                this.listShow = true;
+                this.listLoading = false;
+                this.listResults = res.data.data;
+                if (this.listResults && this.listResults.length > 0) {
+                  this.listColumns = Object.keys(this.listResults[0]);
+                  console.log(this.listColumns);
+                }
+              });
+            }
+          }
+        }
       },
       updateData() {
 

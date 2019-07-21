@@ -2,6 +2,7 @@ package com.abc.controller;
 
 import com.abc.constant.Codes;
 import com.abc.vo.Json;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 import org.apache.shiro.ShiroException;
 import org.apache.shiro.authz.UnauthenticatedException;
 import org.apache.shiro.authz.UnauthorizedException;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import javax.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
 
 /**
  * 统一捕捉异常，返回给前台一个json信息，前台根据这个信息显示对应的提示，或者做页面的跳转。
@@ -29,6 +31,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     //不满足@RequiresGuest注解时抛出的异常信息
     private static final String GUEST_ONLY = "Attempting to perform a guest-only operation";
 
+    @ExceptionHandler(SQLException.class)
+    @ResponseBody
+    public Json handleSQLException(SQLException e) {
+        return new Json("", false, Codes.SQL_ERR, e.toString(), null);
+    }
 
     @ExceptionHandler(ShiroException.class)
     @ResponseBody
