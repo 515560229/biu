@@ -78,7 +78,8 @@ public class CommonConfigController {
             logger.info(oper, JSON.toJSONString(commonConfigVo));
         }
 
-        if (!existsByName(commonConfigVo).equals(commonConfigVo.getId())) {
+        Long existsId = existsByName(commonConfigVo);
+        if (existsId > 0 && !existsId.equals(commonConfigVo.getId())) {
             return Json.fail(oper, String.format("该名称[%s]已被使用", commonConfigVo.getName()));
         }
 

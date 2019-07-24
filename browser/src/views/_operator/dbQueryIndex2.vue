@@ -1,19 +1,22 @@
 <template>
   <div class="app-container">
+    <el-row>
+      <el-tooltip content="新增" placement="top">
+        <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
+        </el-button>
+      </el-tooltip>
+      <el-input v-model="dbQueryNamesQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
+    </el-row>
     <el-row :gutter="24">
       <el-table
         :data="dbQueryNamesData"
-        style="width: 100%;">
+        style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick">
         <el-table-column type="expand">
           <template slot-scope="props">
-            <el-form label-position="left">
-              <el-form-item label="名称">
-                <el-input v-model="props.row.name" placeholder="请输入名称" style="width: 200px;"></el-input>
-              </el-form-item>
-              <el-form-item label="SQL">
-                <mysql-editor v-model="props.row.dbQueryConfig.sqlTemplate"></mysql-editor>
-              </el-form-item>
-            </el-form>
+            <!-- 条件面板 -->
+            <template v-if="props.row.dbQueryConfig.parameters && props.row.dbQueryConfig.parameters.length > 0">
+              <el-input v-model="param.defaultValue" :placeholder="param.label" v-for="param in props.row.dbQueryConfig.parameters"></el-input>
+            </template>
             <!-- 结果面板 -->
             <template v-if="tableData['data' + props.$index]">
               <el-table style="width: 100%;height: 95%;"
@@ -38,71 +41,28 @@
           type="index"
           width="30">
         </el-table-column>
-        <el-table-column
-          label="名称"
-          prop="name">
-        </el-table-column>
-        <el-table-column align="right">
-          <template slot="header" slot-scope="scope">
-            <el-input
-              v-model="dbQueryNamesQuery.key"
-              size="mini"
-              placeholder="输入关键字搜索"/>
-          </template>
+        <el-table-column align="right" width="140px">
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index,scope.row)" size="mini" type="danger" icon="el-icon-delete"
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
-              <el-button @click="updateData(scope.$index,scope.row)" size="mini" type="info" icon="el-icon-edit"
+              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="执行" placement="top">
-              <el-button @click="executeData(scope.$index,scope.row)" size="mini" type="info"
+              <el-button @click="executeData(scope.$index, scope.row)" size="mini" type="info"
                          icon="el-icon-caret-right" circle plain></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
+        <el-table-column
+          label="名称"
+          prop="name">
+        </el-table-column>
       </el-table>
     </el-row>
-    <!--
-    <el-row :gutter="24" style="margin-top: 10px;">
-      <div class="el-tabs el-tabs--top el-tabs--border-card" style="text-align: left;">
-        <div class="el-tabs__header is-top">
-          <div class="el-tabs__nav-wrap is-top">
-            <div class="el-tabs__nav-scroll">
-              <div role="tablist" class="el-tabs__nav" style="transform: translateX(0px);">
-                <div v-for="tabName in tabsCount" v-bind:id="'tab-' + tabName"
-                     v-bind:class="{'el-tabs__item':true,'is-top':true,'is-active': tabIndex === toString(tabName)}"
-                     @click="handleTabsClick(toString(tabName))">
-                  {{tabName}}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="height: 10px;float:left;"></div>
-      -->
-    <!-- 结果面板
-    <el-table style="width: 100%;height: 95%;"
-              :data="listResults"
-              v-loading.body="listLoading"
-              v-if="listShow"
-              element-loading-text="加载中"
-              border fit highlight-current-row
-              @cell-dblclick="handleCellDbClick"
-    >
-      <el-table-column :prop="column" :label="column" v-for="(column,idx) in listColumns"
-                       :show-overflow-tooltip='true' :key="idx">
-        <template slot-scope="scope">
-          <span v-text="scope.row[column]"></span>
-        </template>
-      </el-table-column>
-    </el-table>
-
-  </el-row>-->
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
       <json-editor v-model="needFormatValue" v-if="textFormat === 'json'"></json-editor>
       <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
@@ -110,11 +70,12 @@
     <!--弹出窗口：新增/编辑-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="80%">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="left" label-width="120px">
-        <el-form-item label="名称" prop="name" v-if="dialogStatus=='create'">
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="temp.id" v-show="false"></el-input>
           <el-input v-model="temp.name"></el-input>
         </el-form-item>
-
-        <el-form-item label="数据源" prop="dbConfig">
+        <!-- 修改时不可更改数据源 -->
+        <el-form-item label="数据源">
           <el-select v-model="temp.dbQueryConfig.id" filterable remote reserve-keyword clearable style="width:100%"
                      placeholder="请输入数据源名称,支持模糊搜索"
                      :remote-method="findDbConfig"
@@ -127,12 +88,21 @@
             </el-option>
           </el-select>
         </el-form-item>
-
-        <el-form-item label="SQL模板" prop="sqlTemplate">
-          <el-input type="textarea" v-model="temp.dbQueryConfig.sqlTemplate" rows="10"></el-input>
+        <el-form-item label="SQL">
+          <mysql-editor v-model="temp.dbQueryConfig.sqlTemplate"></mysql-editor>
         </el-form-item>
+        <template v-if="temp.dbQueryConfig.parameters && temp.dbQueryConfig.parameters.length > 0">
+          <!-- 动态参数 -->
+          <el-row style="font-size: 18px;">
+            参数列表:
+          </el-row>
+          <el-form-item :label="parameter.name" v-for="parameter in temp.dbQueryConfig.parameters">
+            <el-input v-model="parameter.label" placeholder="请输入该参数的名称"></el-input>
+          </el-form-item>
+        </template>
       </el-form>
       <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="generateParameter()">生成参数</el-button>
         <el-button @click="dialogFormVisible = false">取消</el-button>
         <el-button v-if="dialogStatus=='create'" type="primary" @click="createData">创建</el-button>
         <el-button v-else type="primary" @click="updateData">确定</el-button>
@@ -150,6 +120,7 @@
   import debounce from 'lodash/debounce'
   import JsonEditor from "../../components/JsonEditor/index";
   import MysqlEditor from "../../components/MysqlEditor/index";
+  import {getParameters} from '@/utils/templateParser'
 
   export default {
     name: 'DbQueryManage2',
@@ -163,21 +134,13 @@
           callback();
         }
       };
-      let initTableData = function (length) {
-        let arr = [];
-        for (let i = 0; i < length; i++) {
-          arr[i] = '';
-        }
-        return arr;
-      };
-      let tabsCount = 10;
-
       return {
         type: "dbQuery",
         storageKey: "dbQuery2",
+        //方法
         isJsonString: isJsonString,
+        getParameters: getParameters,
         //DB查询列表 相关的变量
-        dbQueryNameKey: null,
         dbQueryNamesLoading: false,
         dbQueryNamesData: [],
         dbQueryNamesQuery: {
@@ -204,25 +167,15 @@
           type: "db"
         },
         //查询结果相关
-        listResults: [[]],//表数据
-        listColumns: ["dynaColumn"],//表头
-        listLoading: [],//是否显示加载框
-        listShow: [],//是否显示表格
-        //查询结果相关2
         tableData: {},
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
         textFormat: null,
-        //tab相关
-        tabsCount: tabsCount,
-        tabsData: initTableData(tabsCount),
-        tabIndex: '1',
-        //
+        //弹出框及新增和修改相关
         dialogFormVisible: false,
         dialogStatus: '',
         temp: {
-          idx: null, //tableData中的下标
           id: null,
           type: null,
           name: null,
@@ -273,24 +226,6 @@
     },//watch
     computed: {},
     methods: {
-      toString(num) {
-        return num.toString();
-      },
-      //SQL相关方法
-      onCmReady(cm) {
-        console.log('the editor is readied!', cm)
-      },
-      onCmFocus(cm) {
-        console.log('the editor is focus!', cm)
-      },
-      onCmCodeChange(newCode) {
-        console.log('this is new code', newCode)
-        this.code = newCode
-      },
-      handleInput(val) {
-        console.log("22222   " + val);
-      },
-
       //新增
       //数据库查询语句的相关操作
       findDbQueryNames() {
@@ -298,7 +233,7 @@
           this.dbQueryNamesLoading = true;
 
           commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.dbQueryNamesPage).then(res => {
-            this.dbQueryNamesData = res.data.page.records
+            this.dbQueryNamesData = res.data.page.records;
             this.dbQueryNamesLoading = false
           })
         } else {
@@ -308,12 +243,12 @@
       handleCellDbClick(row, column, cell, event) {
         let str = row[column.property];
         if (isJsonString(str)) {
-          this.textFormat = 'json'
+          this.textFormat = 'json';
           this.formatDialogVisible = true;
           this.needFormatValue = JSON.parse(row[column.property]);
           return;
         }
-        this.textFormat = 'text'
+        this.textFormat = 'text';
         this.formatDialogVisible = true;
         this.needFormatValue = str;
       },
@@ -324,6 +259,17 @@
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()
         })
+      },
+      handleEdit(idx, sqlEntity) {
+        this.temp = sqlEntity;
+        this.dialogStatus = 'update';
+        this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      handleRowDbClick(row) {
+        this.$refs['sqlListTable'].toggleRowExpansion(row);
       },
       createData() {
         this.$refs['dataForm'].validate((valid) => {
@@ -339,9 +285,17 @@
           })
         })
       },
-      updateData(idx, dbQueryName) {
-        commonConfigApi.updateCommonConfig(dbQueryName).then(res => {
-          this.$message.success("保存成功")
+      updateData() {
+        this.$refs['dataForm'].validate((valid) => {
+          if (!valid) {
+            return;
+          }
+          let tempData = Object.assign({}, this.temp)//copy obj
+          tempData.type = this.type;
+          commonConfigApi.updateCommonConfig(tempData).then((res) => {
+            this.dialogFormVisible = false;
+            this.$message.success("保存成功");
+          })
         });
       },
       deleteData(idx, dbQueryName) {
@@ -354,9 +308,33 @@
           this.$message.info("已取消删除")
         });
       },
-      executeData(idx, dbQueryName) {
-        this.tabIndex = this.toString(idx + 1);
-        dbOperateApi.execute(dbQueryName).then(res => {
+      getParameterLabel(arr, parameterName) {
+        if (!arr) {
+          return '';
+        }
+        for (let i = 0; i < arr.length; i++) {
+          if (parameterName === arr[i].name) {
+            return arr[i].label;
+          }
+        }
+      },
+      generateParameter() {
+        const sqlEntity = this.temp;
+        const sql = sqlEntity.dbQueryConfig.sqlTemplate;
+        let parameters = getParameters(sql);
+        let oldParameters = sqlEntity.dbQueryConfig.parameters;
+
+        sqlEntity.dbQueryConfig.parameters = [];//重置
+        for (let idx in parameters) {
+          sqlEntity.dbQueryConfig.parameters.splice(idx, 1, {
+            name: parameters[idx],
+            label: this.getParameterLabel(oldParameters, parameters[idx])
+          })
+        }
+        console.log(JSON.stringify(this.temp));
+      },
+      executeData(idx, row) {
+        dbOperateApi.execute(row).then(res => {
           let data = res.data.data;
           let listColumns = [];
           if (data && data.length > 0) {
@@ -365,6 +343,8 @@
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);
           this.$set(this.tableData, "columns" + idx, listColumns);
+          //展开
+          this.$refs['sqlListTable'].toggleRowExpansion(row, true);
         }).catch(e => {
           this.$set(this.tableData, "loading" + idx, false);
         });
@@ -388,34 +368,9 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-  .role-checkbox {
-    margin-left: 0px;
-    margin-right: 15px;
-  }
-
-  [v-cloak] {
-    display: none;
-  }
-
-  .el-tabs .el-tabs__item.is-active {
-    color: black;
-    background-color: green;
-    border-right-color: #DCDFE6;
-    border-left-color: #DCDFE6;
-  }
-
-  .demo-table-expand {
-    font-size: 0;
-  }
-
-  .demo-table-expand label {
-    width: 90px;
-    color: #99a9bf;
-  }
-
-  .demo-table-expand .el-form-item {
-    margin-right: 0;
-    margin-bottom: 0;
-    width: 50%;
+</style>
+<style rel="stylesheet/scss" lang="scss">
+  .el-table__expanded-cell[class*=cell] {
+    padding: 4px 10px;
   }
 </style>
