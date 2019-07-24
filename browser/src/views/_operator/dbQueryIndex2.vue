@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
-    <el-row :gutter="24" style="height: 400px;">
+    <el-row :gutter="24">
       <el-table
         :data="dbQueryNamesData"
-        style="width: 100%">
+        style="width: 100%;">
         <el-table-column type="expand">
           <template slot-scope="props">
             <el-form label-position="left">
@@ -14,6 +14,24 @@
                 <mysql-editor v-model="props.row.dbQueryConfig.sqlTemplate"></mysql-editor>
               </el-form-item>
             </el-form>
+            <!-- 结果面板 -->
+            <template v-if="tableData['data' + props.$index]">
+              <el-table style="width: 100%;height: 95%;"
+                        :data="tableData['data' + props.$index]"
+                        v-loading.body="tableData['loading' + props.$index]"
+                        element-loading-text="加载中"
+                        border fit highlight-current-row
+                        @cell-dblclick="handleCellDbClick"
+              >
+                <el-table-column :prop="column" :label="column"
+                                 v-for="(column,idx) in tableData['columns' + props.$index]"
+                                 :show-overflow-tooltip='true' :key="idx">
+                  <template slot-scope="scope">
+                    <span v-text="scope.row[column]"></span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </template>
           </template>
         </el-table-column>
         <el-table-column
@@ -48,6 +66,7 @@
         </el-table-column>
       </el-table>
     </el-row>
+    <!--
     <el-row :gutter="24" style="margin-top: 10px;">
       <div class="el-tabs el-tabs--top el-tabs--border-card" style="text-align: left;">
         <div class="el-tabs__header is-top">
@@ -65,23 +84,25 @@
         </div>
       </div>
       <div style="height: 10px;float:left;"></div>
-      <!-- 结果面板 -->
-      <el-table style="width: 100%;height: 95%;"
-                :data="listResults"
-                v-loading.body="listLoading"
-                v-if="listShow"
-                element-loading-text="加载中"
-                border fit highlight-current-row
-                @cell-dblclick="handleCellDbClick"
-      >
-        <el-table-column :prop="column" :label="column" v-for="(column,idx) in listColumns"
-                         :show-overflow-tooltip='true' :key="idx">
-          <template slot-scope="scope">
-            <span v-text="scope.row[column]"></span>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-row>
+      -->
+    <!-- 结果面板
+    <el-table style="width: 100%;height: 95%;"
+              :data="listResults"
+              v-loading.body="listLoading"
+              v-if="listShow"
+              element-loading-text="加载中"
+              border fit highlight-current-row
+              @cell-dblclick="handleCellDbClick"
+    >
+      <el-table-column :prop="column" :label="column" v-for="(column,idx) in listColumns"
+                       :show-overflow-tooltip='true' :key="idx">
+        <template slot-scope="scope">
+          <span v-text="scope.row[column]"></span>
+        </template>
+      </el-table-column>
+    </el-table>
+
+  </el-row>-->
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
       <json-editor v-model="needFormatValue" v-if="textFormat === 'json'"></json-editor>
       <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
@@ -131,7 +152,7 @@
   import MysqlEditor from "../../components/MysqlEditor/index";
 
   export default {
-    name: 'DbQueryManage',
+    name: 'DbQueryManage2',
     components: {JsonEditor, MysqlEditor},
     data() {
 
@@ -183,10 +204,12 @@
           type: "db"
         },
         //查询结果相关
-        listResults: [],//表数据
+        listResults: [[]],//表数据
         listColumns: ["dynaColumn"],//表头
-        listLoading: false,//是否显示加载框
-        listShow: false,//是否显示表格
+        listLoading: [],//是否显示加载框
+        listShow: [],//是否显示表格
+        //查询结果相关2
+        tableData: {},
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
@@ -294,23 +317,6 @@
         this.formatDialogVisible = true;
         this.needFormatValue = str;
       },
-      handleTabsClick(tabName) {
-        this.tabIndex = tabName;
-        let tabIndex = parseInt(tabName) - 1;
-        if (tabIndex >= this.tabsData.length) {
-          //打开新的tab页
-          // this.listColumns = null;
-          this.listShow = false;
-          // this.listResults = null;
-          // this.listLoading = false;
-        } else {
-          this.listColumns = this.tabsData[tabIndex].listColumns;
-          this.listShow = this.tabsData[tabIndex].listShow;
-          this.listResults = this.tabsData[tabIndex].listResults;
-          this.listLoading = this.tabsData[tabIndex].listLoading;
-        }
-
-      },
       handleCreate() {
         resetTemp(this.temp)
         this.dialogStatus = 'create'
@@ -350,25 +356,17 @@
       },
       executeData(idx, dbQueryName) {
         this.tabIndex = this.toString(idx + 1);
-        this.listLoading = true;
         dbOperateApi.execute(dbQueryName).then(res => {
           let data = res.data.data;
           let listColumns = [];
           if (data && data.length > 0) {
             listColumns = Object.keys(data[0]);
           }
-          this.listResults = data;
-          this.listShow = true;
-          this.listLoading = false;
-          this.listColumns = listColumns;
-          this.tabsData.splice(parseInt(this.tabIndex) - 1, 1, {
-            listResults: data,
-            listShow: true,
-            listLoading: false,
-            listColumns: listColumns
-          });
+          this.$set(this.tableData, "data" + idx, data);
+          this.$set(this.tableData, "loading" + idx, false);
+          this.$set(this.tableData, "columns" + idx, listColumns);
         }).catch(e => {
-          this.listLoading = false;
+          this.$set(this.tableData, "loading" + idx, false);
         });
       },
       //查找数据源

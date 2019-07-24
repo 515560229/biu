@@ -93,11 +93,11 @@
 
   .mysql-editor >>> .CodeMirror {
     height: auto;
-    min-height: 300px;
+    min-height: 100px;
   }
 
   .mysql-editor >>> .CodeMirror-scroll {
-    min-height: 300px;
+    min-height: 100px;
   }
 
   .mysql-editor >>> .cm-s-rubyblue span.cm-string {
