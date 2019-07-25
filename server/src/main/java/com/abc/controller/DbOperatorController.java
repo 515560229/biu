@@ -6,6 +6,7 @@ import com.abc.entity.SysUser;
 import com.abc.service.CommonConfigService;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
+import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.mysql.jdbc.Driver;
 import org.apache.shiro.SecurityUtils;
@@ -64,6 +65,12 @@ public class DbOperatorController {
         return dataSource;
     }
 
+    public static void main(String[] args) {
+        String sql = "select * from a where a.a = ${a}";
+        sql =sql = sql.replaceAll("\\$\\{.*}", "?");
+        System.out.println(sql);
+    }
+
     @PermInfo("执行SQL")
     @RequiresPermissions("a:dbOperator:execute")
     @PostMapping(value = "/execute")
@@ -73,13 +80,25 @@ public class DbOperatorController {
 
         JdbcTemplate jdbcTemplate = getJdbcTemplate(currentUser, commonConfigVo);
 
-        String sqlTemplate = commonConfigVo.getDbQueryConfig().getSqlTemplate();
-        if (isSelectSQL(sqlTemplate)) {
+        DbQueryConfig dbQueryConfig = commonConfigVo.getDbQueryConfig();
+        String sql = dbQueryConfig.getSqlTemplate();
+        sql = sql.replaceAll("\\$\\{.*?}", "?");
+        List<DbQueryConfig.Parameter> parameters = dbQueryConfig.getParameters();
+        Object[] sqlParamters = null;
+        if (parameters == null || parameters.isEmpty()) {
+            sqlParamters = new Object[0];
+        } else {
+            sqlParamters = new Object[parameters.size()];
+            for (int i = 0; i < parameters.size(); i++) {
+                sqlParamters[i] = parameters.get(i).getDefaultValue();
+            }
+        }
+        if (isSelectSQL(sql)) {
             //最多查询100条记录
-            List<Map<String, Object>> list = jdbcTemplate.query(sqlTemplate, new ColumnMapRowMapper());//TODO 带参数处理
+            List<Map<String, Object>> list = jdbcTemplate.query(sql, sqlParamters,new ColumnMapRowMapper());
             return Json.result("dbOperateExecuteSelect", true, list);
         } else {
-            int effectRowCount = jdbcTemplate.update(sqlTemplate);
+            int effectRowCount = jdbcTemplate.update(sql, sqlParamters);
             List<Map<String, Object>> list = new ArrayList<>();
             Map<String, Object> obj = new HashMap<>();
             obj.put("result", String.format("受影响的行: %s", effectRowCount));

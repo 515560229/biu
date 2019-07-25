@@ -143,6 +143,25 @@ export const asyncRouterMap = [
       }
     ]
   },
+  {
+    path: '/mysql',
+    component: Layout,
+    meta: {title: 'MySQL', icon: 'chart'},
+    children: [
+      {
+        path: 'dataSource',
+        name: 'dataSource',
+        component: _import('_mysql/dataSource'),
+        meta: {title: '数据源', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'sql',
+        name: 'sql',
+        component: _import('_mysql/sql'),
+        meta: {title: 'SQL', icon: 'chart', noCache: false}
+      }
+    ]
+  },
   /*
   {
     path: '/menu1',

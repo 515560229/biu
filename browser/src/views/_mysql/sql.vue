@@ -15,9 +15,15 @@
           <template slot-scope="props">
             <!-- 条件面板 -->
             <template v-if="props.row.dbQueryConfig.parameters && props.row.dbQueryConfig.parameters.length > 0">
-              <el-input v-model="param.defaultValue" :placeholder="param.label"
-                        v-for="(param, index) in props.row.dbQueryConfig.parameters"
-                        :key="'param' + props.$index + '_' + index"></el-input>
+              <el-form inline>
+                <el-form-item v-for="(param, index) in props.row.dbQueryConfig.parameters"
+                              :key="'param' + props.$index + '_' + index">
+                  <el-tooltip class="item" effect="dark" :content="param.label" placement="right-start">
+                    <el-input v-model="param.defaultValue" :placeholder="param.label"
+                              style="margin: 4px;"></el-input>
+                  </el-tooltip>
+                </el-form-item>
+              </el-form>
             </template>
             <!-- 结果面板 -->
             <template v-if="tableData['data' + props.$index]">
@@ -126,7 +132,7 @@
   import {getParameters} from '@/utils/templateParser'
 
   export default {
-    name: 'DbQueryManage2',
+    name: 'MySQL_SQL',
     components: {JsonEditor, MysqlEditor},
     data() {
 
@@ -139,7 +145,7 @@
       };
       return {
         type: "dbQuery",
-        storageKey: "dbQuery2",
+        storageKey: "MySQL_SQL",
         //方法
         isJsonString: isJsonString,
         getParameters: getParameters,
@@ -238,9 +244,11 @@
           commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.dbQueryNamesPage).then(res => {
             this.dbQueryNamesData = res.data.page.records;
             this.dbQueryNamesLoading = false
+            this.tableData = {};
           })
         } else {
           this.dbQueryNamesData = [];
+          this.tableData = {};
         }
       },
       handleCellDbClick(row, column, cell, event) {
@@ -337,9 +345,20 @@
             label: this.getParameterLabel(oldParameters, parameters[idx])
           })
         }
-        console.log(JSON.stringify(this.temp));
       },
       executeData(idx, row) {
+        //展开
+        this.$refs['sqlListTable'].toggleRowExpansion(row, true);
+        //验证参数是否为空
+        let _parameters = row.dbQueryConfig.parameters;
+        if (_parameters !== null && _parameters.length > 0) {
+          for (let i in _parameters) {
+            if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
+              this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
+              return;
+            }
+          }
+        }
         dbOperateApi.execute(row).then(res => {
           let data = res.data.data;
           let listColumns = [];
@@ -349,8 +368,6 @@
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);
           this.$set(this.tableData, "columns" + idx, listColumns);
-          //展开
-          this.$refs['sqlListTable'].toggleRowExpansion(row, true);
         }).catch(e => {
           this.$set(this.tableData, "loading" + idx, false);
         });

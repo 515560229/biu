@@ -90,6 +90,7 @@ public class AuthController {
             SysUser user = (SysUser) currentUser.getPrincipal();
             if (user==null) throw new AuthenticationException();
             log.info("user login: {}, sessionId: {}",user.getUname(),currentUser.getSession().getId());
+            SecurityUtils.getSubject().getSession().setTimeout(1000L * 60 * 60 * 12);
             //返回登录用户的信息给前台，含用户的所有角色和权限
             return Json.succ(oper)
                     .data("token", UUID.randomUUID().toString())

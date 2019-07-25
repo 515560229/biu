@@ -56,8 +56,9 @@
     props: ['value', 'options'],
     watch: {
       value(value) {
+        // console.log("value changed. " + value);
         const editor_value = this.mysqlEditor.getValue()
-        if (value !== editor_value) {
+        if (value !== undefined && value !== null && value !== editor_value) {
           this.mysqlEditor.setValue(this.value)
         }
       }
@@ -66,19 +67,17 @@
       let _options = Object.assign(this.defauleOptions, this.options);//有属性相同时,后面的覆盖前面的. 属于浅拷贝
       this.mysqlEditor = CodeMirror.fromTextArea(this.$refs.textarea, _options);
 
-      this.mysqlEditor.setValue(this.value)
+      if (this.value !== undefined && this.value !== null) {
+        this.mysqlEditor.setValue(this.value);
+      }
       this.mysqlEditor.on('change', cm => {
-        this.$emit('changed', cm.getValue())
-        this.$emit('input', cm.getValue())
+        this.$emit('changed', cm.getValue());
+        this.$emit('input', cm.getValue());
       })
-
-      setTimeout(() => {
-        this.mysqlEditor.refresh()
-      },1000)
     },
     methods: {
       getValue() {
-        console.log("getValue. " + this.mysqlEditor.getValue());
+        // console.log("getValue. " + this.mysqlEditor.getValue());
         return this.mysqlEditor.getValue()
       }
     }
