@@ -162,6 +162,25 @@ export const asyncRouterMap = [
       }
     ]
   },
+  {
+    path: '/interfaces',
+    component: Layout,
+    meta: {title: '接口调用', icon: 'chart'},
+    children: [
+      {
+        path: 'http',
+        name: 'http',
+        component: _import('_interfaces/http'),
+        meta: {title: 'httpRest', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'dubbo',
+        name: 'dubbo',
+        component: _import('_interfaces/dubbo'),
+        meta: {title: 'dubboRPC', icon: 'chart', noCache: false}
+      }
+    ]
+  },
   /*
   {
     path: '/menu1',
