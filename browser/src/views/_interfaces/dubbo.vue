@@ -186,9 +186,9 @@
 
     created() {
       // 在create后还原数据, 实现页面数据状态保存
-      let tempDataStr = localStorage.getItem(this.storageKey);
+      let tempDataStr = sessionStorage.getItem(this.storageKey);
       if (tempDataStr) {
-        let tempData = JSON.parse(localStorage.getItem(this.storageKey));
+        let tempData = JSON.parse(sessionStorage.getItem(this.storageKey));
         for (let key in this._data) {
           if (tempData[key]) {
             //原来有值才使用
@@ -204,7 +204,7 @@
     },
     destroyed() {
       // 在destroy后保存数据
-      localStorage.setItem(this.storageKey, JSON.stringify(this._data));
+      sessionStorage.setItem(this.storageKey, JSON.stringify(this._data));
     },
 
     watch: {

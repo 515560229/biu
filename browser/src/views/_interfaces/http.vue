@@ -27,21 +27,7 @@
             </template>
             <!-- 结果面板 -->
             <template v-if="tableData['data' + props.$index]">
-              <el-table style="width: 100%;height: 95%;"
-                        :data="tableData['data' + props.$index]"
-                        v-loading.body="tableData['loading' + props.$index]"
-                        element-loading-text="加载中"
-                        border fit highlight-current-row
-                        @cell-dblclick="handleCellDbClick"
-              >
-                <el-table-column :prop="column" :label="column"
-                                 v-for="(column,idx) in tableData['columns' + props.$index]"
-                                 :show-overflow-tooltip='true' :key="idx">
-                  <template slot-scope="scope">
-                    <span v-text="scope.row[column]"></span>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <el-input v-model="tableData['data' + props.$index]" type="textarea"></el-input>
             </template>
           </template>
         </el-table-column>
@@ -71,10 +57,6 @@
         </el-table-column>
       </el-table>
     </el-row>
-    <el-dialog :visible.sync="formatDialogVisible" width="60%">
-      <json-editor v-model="needFormatValue" v-if="textFormat === 'json'"></json-editor>
-      <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
-    </el-dialog>
     <!--弹出窗口：新增/编辑-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="80%">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="left" label-width="120px">
@@ -83,31 +65,53 @@
           <el-input v-model="temp.name"></el-input>
         </el-form-item>
         <el-form-item label="请求URL">
-          <el-input v-model="temp.httpConfig.url"></el-input>
+          <el-input placeholder="请输入请求URL" v-model="temp.httpConfig.url" class="input-with-select">
+            <el-select v-model="temp.httpConfig.method" slot="prepend" placeholder="请选择">
+              <el-option
+                v-for="httpMethod in httpMethods"
+                :key="httpMethod.value"
+                :label="httpMethod.value"
+                :value="httpMethod.value">
+              </el-option>
+            </el-select>
+          </el-input>
         </el-form-item>
-        <el-form-item label="请求方式">
-          <el-input v-model="temp.httpConfig.method"></el-input>
-        </el-form-item>
-        <el-form-item label="请求头">
-          <template v-for="(header, idx) in temp.httpConfig.headers" v-if="temp.httpConfig.headers.length > 0">
-            <el-col class="line" :span="2" style="text-align: left;">
-              <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleAddHeader(idx)">
-              </el-button>
-              <el-button type="primary" icon="el-icon-delete" size="mini" circle plain @click="handleDeleteHeader(idx)">
-              </el-button>
-            </el-col>
-            <el-col :span="10">
-              <el-input v-model="header.key"></el-input>
-            </el-col>
-            <el-col class="line" :span="2" style="text-align: center;">=</el-col>
-            <el-col :span="10">
-              <el-input v-model="header.value"></el-input>
-            </el-col>
-          </template>
-        </el-form-item>
-        <el-form-item label="请求体">
-          <json-editor v-model="temp.httpConfig.body"></json-editor>
-        </el-form-item>
+        <el-row :gutter="24" style="height: 300px;">
+          <el-col :span="12">
+            <el-form-item label="请求头">
+              <el-row>
+                <el-tooltip content="在最后新增一行" placement="top">
+                  <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleAddHeader(-1)">
+                  </el-button>
+                </el-tooltip>
+              </el-row>
+              <el-row>
+                <template v-for="(header, idx) in temp.httpConfig.headers" v-if="temp.httpConfig.headers.length > 0">
+                  <el-col class="line" :span="6" style="text-align: left;">
+                    <el-button type="primary" icon="el-icon-plus" size="mini" circle plain
+                               @click="handleAddHeader(idx)">
+                    </el-button>
+                    <el-button type="primary" icon="el-icon-delete" size="mini" circle plain
+                               @click="handleDeleteHeader(idx)">
+                    </el-button>
+                  </el-col>
+                  <el-col :span="8">
+                    <el-input v-model="header.key"></el-input>
+                  </el-col>
+                  <el-col class="line" :span="2" style="text-align: center;">=</el-col>
+                  <el-col :span="8">
+                    <el-input v-model="header.value"></el-input>
+                  </el-col>
+                </template>
+              </el-row>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="请求体">
+              <el-input v-model="temp.httpConfig.body" type="textarea" clearable></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <template v-if="temp.httpConfig.parameters && temp.httpConfig.parameters.length > 0">
           <!-- 动态参数 -->
           <el-row style="font-size: 18px;">
@@ -132,20 +136,25 @@
 <script>
 
   import commonConfigApi from '@/api/config/commonConfig'
-  import dbOperateApi from '@/api/operate/dbOperateApi'
+  import httpApi from '@/api/operate/httpApi'
   import {parseTime, resetTemp, isJsonString} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
-  import JsonEditor from "../../components/JsonEditor/index";
   import {getParameters} from '@/utils/templateParser'
 
   export default {
     name: 'INTERFACE_HTTP',
-    components: {JsonEditor},
+    components: {},
     data() {
       return {
         type: "http",
         storageKey: "INTERFACE_HTTP",
+        httpMethods: [
+          {"value": 'POST'},
+          {"value": 'GET'},
+          {"value": 'PUT'},
+          {"value": 'DELETE'}
+        ],
         //方法
         isJsonString: isJsonString,
         getParameters: getParameters,
@@ -163,10 +172,6 @@
           total: null
         },
         //查询结果相关
-        //格式化相关
-        needFormatValue: null,
-        formatDialogVisible: false,
-        textFormat: null,
         //弹出框及新增和修改相关
         dialogFormVisible: false,
         dialogStatus: '',
@@ -194,10 +199,11 @@
     },
 
     created() {
+      let tempDataStr = sessionStorage.getItem(this.storageKey);
       // 在create后还原数据, 实现页面数据状态保存
-      let tempDataStr = localStorage.getItem(this.storageKey);
+      console.log(tempDataStr)
       if (tempDataStr) {
-        let tempData = JSON.parse(localStorage.getItem(this.storageKey));
+        let tempData = JSON.parse(sessionStorage.getItem(this.storageKey));
         for (let key in this._data) {
           if (tempData[key]) {
             //原来有值才使用
@@ -213,7 +219,8 @@
     },
     destroyed() {
       // 在destroy后保存数据
-      localStorage.setItem(this.storageKey, JSON.stringify(this._data));
+      sessionStorage.setItem(this.storageKey, JSON.stringify(this._data));
+      console.log(sessionStorage.getItem(this.storageKey));
     },
 
     watch: {
@@ -240,9 +247,18 @@
           this.tableData = {};
         }
       },
-      handleAddHeader() {
-        const length = this.temp.httpConfig.headers.length;
-        this.temp.httpConfig.headers.splice(length, 1, {key: "", value: ""});
+      handleAddHeader(idx) {
+        if (idx == -1) {
+          if (this.temp.httpConfig.headers != null) {
+            length = this.temp.httpConfig.headers.length;
+            this.temp.httpConfig.headers.splice(length, 1, {key: "", value: ""});
+          } else {
+            this.temp.httpConfig.headers = [];
+            this.temp.httpConfig.headers.splice(length, 0, {key: "", value: ""});
+          }
+        } else {
+          this.temp.httpConfig.headers.splice(idx + 1, 0, {key: "", value: ""});
+        }
       },
       handleDeleteHeader(idx) {
         this.temp.httpConfig.headers.splice(idx, 1);
@@ -355,7 +371,7 @@
             }
           }
         }
-        dbOperateApi.execute(row).then(res => {
+        httpApi.execute(row).then(res => {
           let data = res.data.data;
           let listColumns = [];
           if (data && data.length > 0) {
@@ -363,7 +379,6 @@
           }
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);
-          this.$set(this.tableData, "columns" + idx, listColumns);
         }).catch(e => {
           this.$set(this.tableData, "loading" + idx, false);
         });
@@ -375,6 +390,10 @@
 <style rel="stylesheet/scss" lang="scss" scoped>
 </style>
 <style rel="stylesheet/scss" lang="scss">
+  .el-select .el-input {
+    width: 130px;
+  }
+
   .el-table__expanded-cell[class*=cell] {
     padding: 4px 10px;
   }
