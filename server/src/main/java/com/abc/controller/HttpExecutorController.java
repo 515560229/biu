@@ -1,9 +1,11 @@
 package com.abc.controller;
 
 import com.abc.annotation.PermInfo;
+import com.abc.util.freemarker.FreemarkerUtils;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
 import com.abc.vo.commonconfigvoproperty.HttpConfig;
+import freemarker.template.TemplateException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +64,17 @@ public class HttpExecutorController {
         responseObj.put("request", requestEntity);
         responseObj.put("response", responseEntity);
         return Json.succ(oper, responseObj);
+    }
+
+    private Map<String, Object> getParameterMap(List<HttpConfig.Parameter> parameters) throws IOException, TemplateException {
+        Map<String, Object> parameterMap = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(parameters)) {
+            for (HttpConfig.Parameter parameter : parameters) {
+                //参数的值可能是函数
+                parameterMap.put(parameter.getName(), FreemarkerUtils.INSTANCE.render(parameter.getDefaultValue(), Collections.emptyMap()));
+            }
+        }
+        return parameterMap;
     }
 
     private String resolve(String str, List<HttpConfig.Parameter> parameters) {

@@ -63,6 +63,7 @@ dependencies {
     compile 'com.alibaba:fastjson:1.2.47'
     compile 'org.apache.commons:commons-lang3'
 
+    compile 'org.freemarker:freemarker:2.3.22'
 }
 
 //设置后依赖不用写版本号
