@@ -5,11 +5,11 @@
         <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
         </el-button>
       </el-tooltip>
-      <el-input v-model="dbQueryNamesQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
+      <el-input v-model="httpInterfaceQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
     </el-row>
     <el-row :gutter="24">
       <el-table
-        :data="dbQueryNamesData"
+        :data="httpInterfaceData"
         style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick">
         <el-table-column type="expand">
           <template slot-scope="props">
@@ -27,7 +27,86 @@
             </template>
             <!-- 结果面板 -->
             <template v-if="tableData['data' + props.$index]">
-              <el-input v-model="tableData['data' + props.$index]" type="textarea"></el-input>
+              <el-row v-loading="tableData['loading' + props.$index]"
+                      element-loading-text="拼命加载中"
+                      element-loading-spinner="el-icon-loading"
+                      element-loading-background="rgba(0, 0, 0, 0.2)"
+              >
+                <el-row :gutter="24">
+                  <el-col :span="12">
+                    <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
+                      <el-tag type="success">{{tableData['data' + props.$index].request.url}}</el-tag>
+                    </template>
+                    <template v-else>
+                      <el-tag type="danger">{{tableData['data' + props.$index].request.url}}</el-tag>
+                    </template>
+                  </el-col>
+                  <el-col :span="12" style="text-align: right;">
+                    <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
+                      <el-tag type="success">{{tableData['data' +
+                        props.$index].response.statusCodeValue}}/{{tableData['data' +
+                        props.$index].response.statusCode}}
+                      </el-tag>
+                    </template>
+                    <template v-else>
+                      <el-tag type="danger">{{tableData['data' +
+                        props.$index].response.statusCodeValue}}/{{tableData['data' +
+                        props.$index].response.statusCode}}
+                      </el-tag>
+                    </template>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="24">
+                  <el-col :span="12">
+                    headers:
+                  </el-col>
+                  <el-col :span="12">
+                    headers:
+                  </el-col>
+                </el-row>
+                <el-row :gutter="24">
+                  <el-col :span="12">
+                    <el-row style="padding-left: 20px;">
+                      <el-row v-for="(value, name) in tableData['data' + props.$index].request.headers" :key="name">
+                        {{name}}:{{value}}
+                      </el-row>
+                    </el-row>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-row style="padding-left: 20px;">
+                      <el-row v-for="(value, name) in tableData['data' + props.$index].response.headers" :key="name">
+                        {{name}}:{{value}}
+                      </el-row>
+                    </el-row>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="24">
+                  <el-col :span="12">
+                    <template v-if="tableData['data' + props.$index].request.body != null">
+                      requestBody:
+                      <el-row style="padding: 0 20px;">
+                        <json-viewer copyable sort boxed
+                                     :value="JSON.parse(tableData['data' + props.$index].request.body)"></json-viewer>
+                      </el-row>
+                    </template>
+                    <template v-else>
+                      &nbsp;
+                    </template>
+                  </el-col>
+                  <el-col :span="12">
+                    <template v-if="tableData['data' + props.$index].response.body != null">
+                      responseBody:
+                      <el-row style="padding: 0 20px;">
+                        <json-viewer copyable sort boxed
+                                     :value="JSON.parse(tableData['data' + props.$index].response.body)"></json-viewer>
+                      </el-row>
+                    </template>
+                    <template v-else>
+                      &nbsp;
+                    </template>
+                  </el-col>
+                </el-row>
+              </el-row>
             </template>
           </template>
         </el-table-column>
@@ -88,9 +167,11 @@
               <el-row>
                 <template v-for="(header, idx) in temp.httpConfig.headers" v-if="temp.httpConfig.headers.length > 0">
                   <el-col class="line" :span="6" style="text-align: left;">
-                    <el-button type="primary" icon="el-icon-plus" size="mini" circle plain
-                               @click="handleAddHeader(idx)">
-                    </el-button>
+                    <el-tooltip content="在当前行下面新增一行" placement="top">
+                      <el-button type="primary" icon="el-icon-plus" size="mini" circle plain
+                                 @click="handleAddHeader(idx)">
+                      </el-button>
+                    </el-tooltip>
                     <el-button type="primary" icon="el-icon-delete" size="mini" circle plain
                                @click="handleDeleteHeader(idx)">
                     </el-button>
@@ -107,9 +188,12 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="请求体">
-              <el-input v-model="temp.httpConfig.body" type="textarea" clearable></el-input>
-            </el-form-item>
+            <template v-if="temp.httpConfig.method !== 'GET'">
+              <el-form-item label="请求体">
+                <el-input v-model="temp.httpConfig.body" type="textarea" clearable
+                          :autosize='requestBodySize'></el-input>
+              </el-form-item>
+            </template>
           </el-col>
         </el-row>
         <template v-if="temp.httpConfig.parameters && temp.httpConfig.parameters.length > 0">
@@ -126,7 +210,7 @@
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="generateParameter()">生成参数</el-button>
         <el-button @click="dialogFormVisible = false">取消</el-button>
-        <el-button v-if="dialogStatus=='create'" type="primary" @click="createData">创建</el-button>
+        <el-button v-if="dialogStatus==='create'" type="primary" @click="createData">创建</el-button>
         <el-button v-else type="primary" @click="updateData">确定</el-button>
       </div>
     </el-dialog>
@@ -155,23 +239,27 @@
           {"value": 'PUT'},
           {"value": 'DELETE'}
         ],
+        requestBodySize: {
+          minRows: 8
+        },
         //方法
         isJsonString: isJsonString,
         getParameters: getParameters,
         //DB查询列表 相关的变量
-        dbQueryNamesLoading: false,
-        dbQueryNamesData: [],
-        dbQueryNamesQuery: {
+        httpInterfaceLoading: false,
+        httpInterfaceData: [],
+        httpInterfaceQuery: {
           key: null,
           type: "http"
         },
-        dbQueryNamesPage: {
+        httpInterfacePage: {
           current: null,
           pages: null,
-          size: null,
+          size: 50,
           total: null
         },
         //查询结果相关
+        tableData: {},
         //弹出框及新增和修改相关
         dialogFormVisible: false,
         dialogStatus: '',
@@ -225,30 +313,30 @@
 
     watch: {
       //延时查询
-      'dbQueryNamesQuery.key': debounce(function () {
-        this.findDbQueryNames()
+      'httpInterfaceQuery.key': debounce(function () {
+        this.findHttpInterface()
       }, 300)
     },//watch
     computed: {},
     methods: {
       //新增
       //数据库查询语句的相关操作
-      findDbQueryNames() {
-        if (this.dbQueryNamesQuery.key !== '') {
-          this.dbQueryNamesLoading = true;
+      findHttpInterface() {
+        if (this.httpInterfaceQuery.key !== '') {
+          this.httpInterfaceLoading = true;
 
-          commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.dbQueryNamesPage).then(res => {
-            this.dbQueryNamesData = res.data.page.records;
-            this.dbQueryNamesLoading = false
+          commonConfigApi.queryCommonConfig(this.httpInterfaceQuery, this.httpInterfacePage).then(res => {
+            this.httpInterfaceData = res.data.page.records;
+            this.httpInterfaceLoading = false
             this.tableData = {};
           })
         } else {
-          this.dbQueryNamesData = [];
+          this.httpInterfaceData = [];
           this.tableData = {};
         }
       },
       handleAddHeader(idx) {
-        if (idx == -1) {
+        if (idx === -1) {
           if (this.temp.httpConfig.headers != null) {
             length = this.temp.httpConfig.headers.length;
             this.temp.httpConfig.headers.splice(length, 1, {key: "", value: ""});
@@ -298,6 +386,7 @@
         this.$refs['sqlListTable'].toggleRowExpansion(row);
       },
       createData() {
+        this.generateParameter();
         this.$refs['dataForm'].validate((valid) => {
           if (!valid) {
             return;
@@ -306,7 +395,8 @@
           tempData.type = this.type;
           commonConfigApi.addCommonConfig(tempData).then((res) => {
             this.temp = res.data.data;
-            this.dialogFormVisible = false
+            this.dialogFormVisible = false;
+            this.findHttpInterface();
             this.$message.success("添加成功")
           })
         })
@@ -324,11 +414,11 @@
           })
         });
       },
-      deleteData(idx, dbQueryName) {
+      deleteData(idx, httpInterface) {
         this.$confirm('您确定要永久删除该查询语句？', '提示', confirm).then(() => {
-          commonConfigApi.deleteCommonConfig(dbQueryName.id).then(res => {
+          commonConfigApi.deleteCommonConfig(httpInterface.id).then(res => {
             this.$message.success("删除成功");
-            this.dbQueryNamesData.splice(idx, 1);
+            this.httpInterfaceData.splice(idx, 1);
           })
         }).catch(() => {
           this.$message.info("已取消删除")
@@ -345,20 +435,54 @@
         }
       },
       generateParameter() {
-        const sqlEntity = this.temp;
-        const sql = sqlEntity.httpConfig.sqlTemplate;
-        let parameters = getParameters(sql);
-        let oldParameters = sqlEntity.httpConfig.parameters;
+        const tempEntity = this.temp;
+        const url = tempEntity.httpConfig.url;
+        //url的参数
+        let parameters = getParameters(url);
+        //headers的参数
+        let headers = tempEntity.httpConfig.headers;
+        if (headers != null) {
+          for (let i = 0; i < headers.length; i++) {
+            let tempHeaderKey = getParameters(headers[i].key);
+            if (tempHeaderKey != null && tempHeaderKey.length > 0) {
+              for (let j = 0; j < tempHeaderKey.length; j++) {
+                parameters.splice(parameters.length, 0, tempHeaderKey[j]);
+              }
+            }
+            let tempHeaderValue = getParameters(headers[i].value);
+            if (tempHeaderValue != null && tempHeaderValue.length > 0) {
+              for (let j = 0; j < tempHeaderValue.length; j++) {
+                parameters.splice(parameters.length, 0, tempHeaderValue[j]);
+              }
+            }
+          }
+        }
+        //请求体的参数
+        if (tempEntity.httpConfig.body != null) {
+          let tempBodyParameters = getParameters(tempEntity.httpConfig.body);
+          if (tempBodyParameters != null && tempBodyParameters.length > 0) {
+            for (let j = 0; j < tempBodyParameters.length; j++) {
+              parameters.splice(parameters.length, 0, tempBodyParameters[j]);
+            }
+          }
+        }
 
-        sqlEntity.httpConfig.parameters = [];//重置
+        let oldParameters = tempEntity.httpConfig.parameters;
+
+        tempEntity.httpConfig.parameters = [];//重置
         for (let idx in parameters) {
-          sqlEntity.httpConfig.parameters.splice(idx, 1, {
+          let label = this.getParameterLabel(oldParameters, parameters[idx]);
+          if (label === null || label.trim() === '') {
+            label = parameters[idx];
+          }
+          tempEntity.httpConfig.parameters.splice(idx, 1, {
             name: parameters[idx],
-            label: this.getParameterLabel(oldParameters, parameters[idx])
-          })
+            label: label
+          });
         }
       },
       executeData(idx, row) {
+        this.$set(this.tableData, "loading" + idx, true);
         //展开
         this.$refs['sqlListTable'].toggleRowExpansion(row, true);
         //验证参数是否为空
@@ -373,16 +497,18 @@
         }
         httpApi.execute(row).then(res => {
           let data = res.data.data;
-          let listColumns = [];
-          if (data && data.length > 0) {
-            listColumns = Object.keys(data[0]);
-          }
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);
         }).catch(e => {
           this.$set(this.tableData, "loading" + idx, false);
         });
       },
+      formatter(val) {
+        if (isJsonString(val)) {
+          return JSON.stringify(JSON.parse(val), null, 4);
+        }
+        return val;
+      }
     }
   }
 </script>
