@@ -276,8 +276,8 @@
       },
       handleCopy(idx, sqlEntity) {
         this.temp = deepClone(sqlEntity);
-        this.dialogStatus = 'update';
-        this.dialogFormVisible = create;
+        this.dialogStatus = 'create';
+        this.dialogFormVisible = true;
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()
         })
@@ -295,6 +295,7 @@
           commonConfigApi.addCommonConfig(tempData).then((res) => {
             this.temp = res.data.data;
             this.dialogFormVisible = false
+            this.findDbQueryNames();
             this.$message.success("添加成功")
           })
         })
