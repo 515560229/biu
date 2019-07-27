@@ -205,17 +205,6 @@
     },
 
     created() {
-      // 在create后还原数据, 实现页面数据状态保存
-      let tempDataStr = sessionStorage.getItem(this.storageKey);
-      if (tempDataStr) {
-        let tempData = JSON.parse(sessionStorage.getItem(this.storageKey));
-        for (let key in this._data) {
-          if (tempData[key]) {
-            //原来有值才使用
-            this.$set(this._data, key, tempData[key]);
-          }
-        }
-      }
     },
     mounted() {
     },
@@ -223,8 +212,6 @@
 
     },
     destroyed() {
-      // 在destroy后保存数据
-      sessionStorage.setItem(this.storageKey, JSON.stringify(this._data));
     },
 
     watch: {

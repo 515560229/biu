@@ -121,7 +121,7 @@
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+              <el-button @click="handleEdit(scope.$index, scope.row)" @dblclick="handleEditByCopy(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="执行" placement="top">
@@ -155,7 +155,7 @@
             </el-select>
           </el-input>
         </el-form-item>
-        <el-row :gutter="24" style="height: 300px;">
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="请求头">
               <el-row>
@@ -221,7 +221,7 @@
 
   import commonConfigApi from '@/api/config/commonConfig'
   import httpApi from '@/api/operate/httpApi'
-  import {parseTime, resetTemp, isJsonString} from '@/utils'
+  import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
   import {getParameters} from '@/utils/templateParser'
@@ -287,18 +287,6 @@
     },
 
     created() {
-      let tempDataStr = sessionStorage.getItem(this.storageKey);
-      // 在create后还原数据, 实现页面数据状态保存
-      console.log(tempDataStr)
-      if (tempDataStr) {
-        let tempData = JSON.parse(sessionStorage.getItem(this.storageKey));
-        for (let key in this._data) {
-          if (tempData[key]) {
-            //原来有值才使用
-            this.$set(this._data, key, tempData[key]);
-          }
-        }
-      }
     },
     mounted() {
     },
@@ -306,11 +294,11 @@
 
     },
     destroyed() {
-      // 在destroy后保存数据
-      sessionStorage.setItem(this.storageKey, JSON.stringify(this._data));
-      console.log(sessionStorage.getItem(this.storageKey));
     },
-
+    //keep-alive钩子函数：组件消失，被缓存时调用
+    deactivated() {
+      console.log('页面被缓存');
+    },
     watch: {
       //延时查询
       'httpInterfaceQuery.key': debounce(function () {
@@ -375,8 +363,17 @@
         })
       },
       handleEdit(idx, sqlEntity) {
-        this.temp = sqlEntity;
+        this.temp = deepClone(sqlEntity);
         this.dialogStatus = 'update';
+        this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      handleEditByCopy(idx, sqlEntity) {
+        this.temp = deepClone(sqlEntity);
+        this.temp.id = null;
+        this.dialogStatus = 'create';
         this.dialogFormVisible = true;
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()

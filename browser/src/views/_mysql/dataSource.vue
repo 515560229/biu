@@ -176,21 +176,8 @@
     mounted() {
     },
     destroyed() {
-      // 在destroy后保存数据
-      sessionStorage.setItem(this.storageKey, JSON.stringify(this._data));
     },
     created() {
-      // 在mount后还原数据, 实现页面数据状态保存
-      let tempData = JSON.parse(sessionStorage.getItem(this.storageKey));
-      for (let key in this._data) {
-        if (tempData[key]) {
-          //原来有值才使用
-          this.$set(this._data, key, tempData[key]);
-        }
-      }
-      if (this.tableQuery.key == '') {
-        this.fetchData()
-      }
     },
 
     watch: {
@@ -201,8 +188,6 @@
     },//watch
 
     methods: {
-
-
       //全选
       handleCheckAllChange(val) {
         let allRids = this.roleOptions.map(role => role.id)

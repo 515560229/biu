@@ -34,27 +34,29 @@ public class HttpExecutorController {
     @PermInfo("执行HTTP请求")
     @RequiresPermissions("a:http:execute")
     @PostMapping(value = "/execute")
-    public Json execute(@RequestBody CommonConfigVo commonConfigVo) {
+    public Json execute(@RequestBody CommonConfigVo commonConfigVo) throws IOException, TemplateException {
         String oper = "httpExecute";
         HttpConfig httpConfig = commonConfigVo.getHttpConfig();
 
+        Map<String, Object> parameterMap = getParameterMap(httpConfig.getParameters());
+        //处理header参数
         List<HttpConfig.Header> headers = httpConfig.getHeaders();
         HttpHeaders httpHeaders = new HttpHeaders();
         if (CollectionUtils.isNotEmpty(headers)) {
             for (HttpConfig.Header header : headers) {
-                httpHeaders.add(resolve(header.getKey(), httpConfig.getParameters()),
-                        resolve(header.getValue(), httpConfig.getParameters()));
+                httpHeaders.add(resolve(header.getKey(), parameterMap),
+                        resolve(header.getValue(), parameterMap));
             }
         }
-
-        String url = resolve(httpConfig.getUrl(), httpConfig.getParameters());
+        //处理url参数
+        String url = resolve(httpConfig.getUrl(), parameterMap);
 
         HttpMethod httpMethod = HttpMethod.resolve(httpConfig.getMethod());
         RequestEntity<String> requestEntity = null;
         if (httpMethod == HttpMethod.GET) {
             requestEntity = new RequestEntity<>(httpHeaders, httpMethod, URI.create(url));
         } else {
-            requestEntity = new RequestEntity<>(resolve(httpConfig.getBody(), httpConfig.getParameters()),
+            requestEntity = new RequestEntity<>(resolve(httpConfig.getBody(), parameterMap),
                     httpHeaders,
                     httpMethod, URI.create(url));
         }
@@ -77,12 +79,8 @@ public class HttpExecutorController {
         return parameterMap;
     }
 
-    private String resolve(String str, List<HttpConfig.Parameter> parameters) {
-        String result = str;
-        for (HttpConfig.Parameter parameter : parameters) {
-            result = result.replaceAll("\\$\\{" + parameter.getName() + "?}", parameter.getDefaultValue());
-        }
-        return result;
+    private String resolve(String str, Map<String, Object> parameterMap) throws IOException, TemplateException {
+        return FreemarkerUtils.INSTANCE.render(str, parameterMap);
     }
 
 }
