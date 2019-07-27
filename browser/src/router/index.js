@@ -69,6 +69,12 @@ export const asyncRouterMap = [
         name: 'examples2',
         component: _import('_examples/mysqlEditor2'),
         meta: {title: 'MySQLEditor2', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'tabs',
+        name: 'tabs',
+        component: _import('_examples/tabs'),
+        meta: {title: 'tabs练习', icon: 'chart', noCache: false}
       }
     ]
   },
@@ -108,18 +114,21 @@ export const asyncRouterMap = [
   {
     path: '/config',
     component: Layout,
+    hidden: true,
     meta: {perm: 'm:config', title: '配置', icon: 'chart'},
     children: [
       {
         path: 'variable',
         name: 'variable',
         component: _import('_config/variable/index'),
+        hidden: true,
         meta: {perm: 'm:config:variable', title: '全局变量', icon: 'chart', noCache: false}
       },
       {
         path: 'variable2',
         name: 'variable2',
         component: _import('_config/db/index'),
+        hidden: true,
         meta: {perm: 'm:config:db', title: '数据源', icon: 'chart', noCache: false}
       }
     ]
@@ -127,18 +136,21 @@ export const asyncRouterMap = [
   {
     path: '/operator',
     component: Layout,
+    hidden: true,
     meta: {perm: 'm:operator', title: '操作', icon: 'chart'},
     children: [
       {
         path: 'dbQueryIndex',
         name: 'dbQueryIndex',
         component: _import('_operator/dbQueryIndex'),
+        hidden: true,
         meta: {perm: 'm:config:variable', title: '数据库1', icon: 'chart', noCache: false}
       },
       {
         path: 'kafka',
         name: 'kafka',
         component: _import('_operator/dbQueryIndex2'),
+        hidden: true,
         meta: {perm: 'm:config:variable', title: '数据库2', icon: 'chart', noCache: false}
       }
     ]
@@ -171,7 +183,14 @@ export const asyncRouterMap = [
         path: 'http',
         name: 'http',
         component: _import('_interfaces/http'),
+        hidden: true,
         meta: {title: 'httpRest', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'http2',
+        name: 'http2',
+        component: _import('_interfaces/http2'),
+        meta: {title: 'http', icon: 'chart', noCache: false}
       },
       {
         path: 'dubbo',

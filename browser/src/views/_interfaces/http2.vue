@@ -1,24 +1,33 @@
 <template>
   <div class="app-container">
+    <!-- 查询条件 -->
     <el-row>
       <el-tooltip content="新增" placement="top">
         <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
         </el-button>
       </el-tooltip>
-      <el-input v-model="httpInterfaceQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
+      <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
+        <el-button type="primary" icon="el-icon-s-home" size="mini" circle plain @click="handleResetTabIndex">
+        </el-button>
+      </el-tooltip>
+      <el-input v-model="httpInterfaceQuery.key" size="mini" placeholder="输入关键字搜索"
+                style="width: 80%;margin-left: 10px;"/>
     </el-row>
+    <!-- 查询结果 -->
     <el-row :gutter="24">
       <el-table
-        :data="httpInterfaceData"
-        style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick" @expand-change="handleExpandChange">
+        :data="httpInterfaceData" size="mini" :highlight-current-row="true" cell-class-name="tableCellClass"
+        style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick"
+      >
         <el-table-column
           type="index"
-          width="30">
+          width="40">
         </el-table-column>
         <el-table-column align="left" width="178px">
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger"
+                         icon="el-icon-delete"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
@@ -62,89 +71,33 @@
                   </el-form-item>
                 </el-form>
               </template>
-              <!-- 结果面板 -->
-              <template v-if="tableData['data' + props.$index]">
-                <el-row>
-                  <el-row :gutter="24">
-                    <el-col :span="12">
-                      <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
-                        <el-tag type="success">{{tableData['data' + props.$index].request.url}}</el-tag>
-                      </template>
-                      <template v-else>
-                        <el-tag type="danger">{{tableData['data' + props.$index].request.url}}</el-tag>
-                      </template>
-                    </el-col>
-                    <el-col :span="12" style="text-align: right;">
-                      <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
-                        <el-tag type="success">{{tableData['data' +
-                          props.$index].response.statusCodeValue}}/{{tableData['data' +
-                          props.$index].response.statusCode}}
-                        </el-tag>
-                      </template>
-                      <template v-else>
-                        <el-tag type="danger">{{tableData['data' +
-                          props.$index].response.statusCodeValue}}/{{tableData['data' +
-                          props.$index].response.statusCode}}
-                        </el-tag>
-                      </template>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="24">
-                    <el-col :span="12">
-                      headers:
-                    </el-col>
-                    <el-col :span="12">
-                      headers:
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="24">
-                    <el-col :span="12">
-                      <el-row style="padding-left: 20px;">
-                        <el-row v-for="(value, name) in tableData['data' + props.$index].request.headers" :key="name">
-                          {{name}}:{{value}}
-                        </el-row>
-                      </el-row>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-row style="padding-left: 20px;">
-                        <el-row v-for="(value, name) in tableData['data' + props.$index].response.headers" :key="name">
-                          {{name}}:{{value}}
-                        </el-row>
-                      </el-row>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="24">
-                    <el-col :span="12">
-                      <template v-if="tableData['data' + props.$index].request.body != null">
-                        requestBody:
-                        <el-row style="padding: 0 20px;">
-                          <el-input type="textarea" :autosize='requestBodySize'
-                                    v-model="tableData['data' + props.$index].request.body" readonly></el-input>
-                        </el-row>
-                      </template>
-                      <template v-else>
-                        &nbsp;
-                      </template>
-                    </el-col>
-                    <el-col :span="12">
-                      <template v-if="tableData['data' + props.$index].response.body != null">
-                        responseBody:
-                        <el-row style="padding: 0 20px;">
-                          <el-input type="textarea" :autosize='requestBodySize'
-                                    v-model="tableData['data' + props.$index].response.body" readonly></el-input>
-                        </el-row>
-                      </template>
-                      <template v-else>
-                        &nbsp;
-                      </template>
-                    </el-col>
-                  </el-row>
-                </el-row>
-              </template>
             </el-row>
           </template>
         </el-table-column>
       </el-table>
+      <!--分页-->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="page1.current"
+        :page-sizes="[1, 2, 10, 20, 30, 40, 50]"
+        :page-size="page1.size"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="page1.total">
+      </el-pagination>
+    </el-row>
+    <!-- 执行结果 -->
+    <el-row style="padding: 0 auto;margin:4px -14px;">
+      <el-tabs v-model="currentTabName" type="card" tab-position="left">
+        <el-tab-pane
+          v-for="(item, index) in tabDatas"
+          :key="item.name"
+          :label="item.title"
+          :name="item.name"
+        >
+          <http-result-panel :value="tableData['data' + index]"></http-result-panel>
+        </el-tab-pane>
+      </el-tabs>
     </el-row>
     <!--弹出窗口：新增/编辑-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="80%">
@@ -232,16 +185,27 @@
   import commonConfigApi from '@/api/config/commonConfig'
   import httpApi from '@/api/operate/httpApi'
   import {deepClone, isJsonString, resetTemp} from '@/utils'
-  import {confirm} from '@/utils/constants'
+  import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
   import {getParameters} from '@/utils/templateParser'
+  import HttpResultPanel from '@/components/panel/HttpResultPanel'
   //https://github.com/vkiryukhin/pretty-data
   let pd = require('pretty-data').pd;
 
   export default {
     name: 'INTERFACE_HTTP',
-    components: {},
+    components: {HttpResultPanel},
     data() {
+      let maxTabCount = 10;
+      let initTabs = function () {
+        let result = [];
+        for (let i = 0; i < maxTabCount; i++) {
+          let title = i + 1 + "";
+          result.push({'title': title, 'name': title})
+        }
+        return result;
+      };
+
       return {
         type: "http",
         storageKey: "INTERFACE_HTTP",
@@ -255,6 +219,9 @@
           minRows: 16,
           maxRows: 16
         },
+        //tabs相关
+        currentTabName: '1',
+        tabDatas: initTabs(),
         //格式化
         requestBodyFormat: 'json',
         responseBodyFormat: 'json',
@@ -271,7 +238,7 @@
         page1: {
           current: null,
           pages: null,
-          size: 50,
+          size: 10,
           total: null
         },
         //查询结果相关
@@ -330,13 +297,21 @@
 
           commonConfigApi.queryCommonConfig(this.httpInterfaceQuery, this.page1).then(res => {
             this.httpInterfaceData = res.data.page.records;
-            this.httpInterfaceLoading = false
-            this.tableData = {};
+            this.httpInterfaceLoading = false;
+            pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
           })
         } else {
           this.httpInterfaceData = [];
-          this.tableData = {};
         }
+      },
+      //分页
+      handleSizeChange(val) {
+        this.page1.size = val;
+        this.findHttpInterface();
+      },
+      handleCurrentChange(val) {
+        this.page1.current = val;
+        this.findHttpInterface();
       },
       handleAddHeader(idx) {
         if (idx === -1) {
@@ -353,6 +328,12 @@
       },
       handleDeleteHeader(idx) {
         this.temp.httpConfig.headers.splice(idx, 1);
+      },
+      handleResetTabIndex() {
+        if (this.tableData.data0 != undefined) {
+          this.tableData.data0 = undefined;
+        }
+        this.currentTabName = '1';
       },
       handleCreate() {
         resetTemp(this.temp)
@@ -382,31 +363,9 @@
         })
       },
       handleRowDbClick(row) {
-        this.$refs['sqlListTable'].toggleRowExpansion(row);
-      },
-      /**
-       * 如果是展开某行, 则将其它行折叠
-       * @param row
-       * @param expandRows
-       */
-      handleExpandChange(row, expandRows) {
-        let rowId = row.id;
-        let open = false;
-        if (expandRows != null) {
-          for (let i = 0; i < expandRows.length; i++) {
-            if (rowId === expandRows[i].id) {
-              open = true;
-            }
-          }
-        }
-        if (open) {
-          if (expandRows != null) {
-            for (let i = 0; i < expandRows.length; i++) {
-              if (rowId !== expandRows[i].id) {
-                this.$refs['sqlListTable'].toggleRowExpansion(expandRows[i], false);
-              }
-            }
-          }
+        let _parameters = row.httpConfig.parameters;
+        if (_parameters !== null && _parameters.length > 0) {
+          this.$refs['sqlListTable'].toggleRowExpansion(row);
         }
       },
       createData() {
@@ -507,14 +466,12 @@
         }
       },
       executeData(idx, row) {
-        let format = require('xml-formatter');
-
         this.$set(this.tableData, "loading" + idx, true);
-        //展开
-        this.$refs['sqlListTable'].toggleRowExpansion(row, true);
         //验证参数是否为空
         let _parameters = row.httpConfig.parameters;
         if (_parameters !== null && _parameters.length > 0) {
+          //有参数, 则一定展开
+          this.$refs['sqlListTable'].toggleRowExpansion(row, true);
           for (let i in _parameters) {
             if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
               this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
@@ -534,8 +491,17 @@
             data.response.body = pd.xml(data.response.body);
           }
 
-          this.$set(this.tableData, "data" + idx, data);
+          let activeName = this.currentTabName;
+          let newTabName = parseInt(activeName) + 1 + "";
+          if (this.tableData['data0'] === undefined || this.tableData['data0'] == null) {
+            newTabName = '1';//当前页未始初化. 也就是第1次加载的第1页
+          } else if (parseInt(newTabName) > this.tabDatas.length) {
+            newTabName = '1';//循环 超过则从1开始
+          }
+
+          this.$set(this.tableData, "data" + parseInt(newTabName - 1), data);
           this.$set(this.tableData, "loading" + idx, false);
+          this.currentTabName = newTabName;
         }).catch(e => {
           console.log(e);
           this.$set(this.tableData, "loading" + idx, false);

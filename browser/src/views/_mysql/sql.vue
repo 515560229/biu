@@ -11,6 +11,35 @@
       <el-table
         :data="dbQueryNamesData"
         style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick">
+        <el-table-column
+          type="index"
+          width="30">
+        </el-table-column>
+        <el-table-column align="left" width="178px">
+          <template slot-scope="scope">
+            <el-tooltip content="删除" placement="top">
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="编辑" placement="top">
+              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="复制" placement="top">
+              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-document-copy"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="执行" placement="top">
+              <el-button @click="executeData(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-caret-right" circle plain></el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="名称"
+          prop="name">
+        </el-table-column>
         <el-table-column type="expand">
           <template slot-scope="props">
             <!-- 条件面板 -->
@@ -44,35 +73,6 @@
               </el-table>
             </template>
           </template>
-        </el-table-column>
-        <el-table-column
-          type="index"
-          width="30">
-        </el-table-column>
-        <el-table-column align="left" width="178px">
-          <template slot-scope="scope">
-            <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="复制" placement="top">
-              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
-                         icon="el-icon-document-copy"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="执行" placement="top">
-              <el-button @click="executeData(scope.$index, scope.row)" size="mini" type="info"
-                         icon="el-icon-caret-right" circle plain></el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="名称"
-          prop="name">
         </el-table-column>
       </el-table>
     </el-row>
