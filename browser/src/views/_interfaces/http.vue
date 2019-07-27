@@ -10,7 +10,38 @@
     <el-row :gutter="24">
       <el-table
         :data="httpInterfaceData"
-        style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick">
+        style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick" @expand-change="handleExpandChange">
+        <el-table-column
+          type="index"
+          width="30">
+        </el-table-column>
+        <el-table-column align="left" width="178px">
+          <template slot-scope="scope">
+            <el-tooltip content="删除" placement="top">
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="编辑" placement="top">
+              <el-button @click="handleEdit(scope.$index, scope.row)"
+                         size="mini" type="info"
+                         icon="el-icon-edit"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="复制" placement="top">
+              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-document-copy"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="执行" placement="top">
+              <el-button @click="executeData(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-caret-right" circle plain></el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="名称"
+          prop="name">
+        </el-table-column>
         <el-table-column type="expand">
           <template slot-scope="props">
             <!-- 条件面板 -->
@@ -85,8 +116,8 @@
                     <template v-if="tableData['data' + props.$index].request.body != null">
                       requestBody:
                       <el-row style="padding: 0 20px;">
-                        <json-viewer copyable sort boxed
-                                     :value="JSON.parse(tableData['data' + props.$index].request.body)"></json-viewer>
+                        <el-input type="textarea" :autosize='requestBodySize'
+                                  v-model="tableData['data' + props.$index].request.body" readonly></el-input>
                       </el-row>
                     </template>
                     <template v-else>
@@ -97,8 +128,8 @@
                     <template v-if="tableData['data' + props.$index].response.body != null">
                       responseBody:
                       <el-row style="padding: 0 20px;">
-                        <json-viewer copyable sort boxed
-                                     :value="JSON.parse(tableData['data' + props.$index].response.body)"></json-viewer>
+                        <el-input type="textarea" :autosize='requestBodySize'
+                                  v-model="tableData['data' + props.$index].response.body" readonly></el-input>
                       </el-row>
                     </template>
                     <template v-else>
@@ -109,37 +140,6 @@
               </el-row>
             </template>
           </template>
-        </el-table-column>
-        <el-table-column
-          type="index"
-          width="30">
-        </el-table-column>
-        <el-table-column align="left" width="178px">
-          <template slot-scope="scope">
-            <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)"
-                         size="mini" type="info"
-                         icon="el-icon-edit"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="复制" placement="top">
-              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
-                         icon="el-icon-document-copy"
-                         circle plain></el-button>
-            </el-tooltip>
-            <el-tooltip content="执行" placement="top">
-              <el-button @click="executeData(scope.$index, scope.row)" size="mini" type="info"
-                         icon="el-icon-caret-right" circle plain></el-button>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="名称"
-          prop="name">
         </el-table-column>
       </el-table>
     </el-row>
@@ -228,10 +228,12 @@
 
   import commonConfigApi from '@/api/config/commonConfig'
   import httpApi from '@/api/operate/httpApi'
-  import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
-  import {confirm, pageParamNames, root} from '@/utils/constants'
+  import {deepClone, isJsonString, resetTemp} from '@/utils'
+  import {confirm} from '@/utils/constants'
   import debounce from 'lodash/debounce'
   import {getParameters} from '@/utils/templateParser'
+  //https://github.com/vkiryukhin/pretty-data
+  let pd = require('pretty-data').pd;
 
   export default {
     name: 'INTERFACE_HTTP',
@@ -247,8 +249,12 @@
           {"value": 'DELETE'}
         ],
         requestBodySize: {
-          minRows: 8
+          minRows: 16,
+          maxRows: 16
         },
+        //格式化
+        requestBodyFormat: 'json',
+        responseBodyFormat: 'json',
         //方法
         isJsonString: isJsonString,
         getParameters: getParameters,
@@ -304,7 +310,6 @@
     },
     //keep-alive钩子函数：组件消失，被缓存时调用
     deactivated() {
-      console.log('页面被缓存');
     },
     watch: {
       //延时查询
@@ -346,21 +351,6 @@
       handleDeleteHeader(idx) {
         this.temp.httpConfig.headers.splice(idx, 1);
       },
-      handleCellDbClick(row, column, cell, event) {
-        let str = row[column.property];
-        if (str === undefined || str === '') {
-          return;
-        }
-        if (isJsonString(str)) {
-          this.textFormat = 'json';
-          this.formatDialogVisible = true;
-          this.needFormatValue = JSON.parse(row[column.property]);
-          return;
-        }
-        this.textFormat = 'text';
-        this.formatDialogVisible = true;
-        this.needFormatValue = str;
-      },
       handleCreate() {
         resetTemp(this.temp)
         this.dialogStatus = 'create'
@@ -390,6 +380,31 @@
       },
       handleRowDbClick(row) {
         this.$refs['sqlListTable'].toggleRowExpansion(row);
+      },
+      /**
+       * 如果是展开某行, 则将其它行折叠
+       * @param row
+       * @param expandRows
+       */
+      handleExpandChange(row, expandRows) {
+        let rowId = row.id;
+        let open = false;
+        if (expandRows != null) {
+          for (let i = 0; i < expandRows.length; i++) {
+            if (rowId === expandRows[i].id) {
+              open = true;
+            }
+          }
+        }
+        if (open) {
+          if (expandRows != null) {
+            for (let i = 0; i < expandRows.length; i++) {
+              if (rowId !== expandRows[i].id) {
+                this.$refs['sqlListTable'].toggleRowExpansion(expandRows[i], false);
+              }
+            }
+          }
+        }
       },
       createData() {
         this.generateParameter();
@@ -489,6 +504,8 @@
         }
       },
       executeData(idx, row) {
+        let format = require('xml-formatter');
+
         this.$set(this.tableData, "loading" + idx, true);
         //展开
         this.$refs['sqlListTable'].toggleRowExpansion(row, true);
@@ -504,9 +521,19 @@
         }
         httpApi.execute(row).then(res => {
           let data = res.data.data;
+
+          if (isJsonString(data.request.body)) {
+            data.request.body = pd.json(data.request.body);
+            data.response.body = pd.json(data.response.body);
+          } else {
+            data.request.body = pd.xml(data.request.body);
+            data.response.body = pd.xml(data.response.body);
+          }
+
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);
         }).catch(e => {
+          console.log(e);
           this.$set(this.tableData, "loading" + idx, false);
         });
       },
