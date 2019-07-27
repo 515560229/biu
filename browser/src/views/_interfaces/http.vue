@@ -416,6 +416,7 @@
           tempData.type = this.type;
           commonConfigApi.updateCommonConfig(tempData).then((res) => {
             this.dialogFormVisible = false;
+            this.findHttpInterface();
             this.$message.success("保存成功");
           })
         });
