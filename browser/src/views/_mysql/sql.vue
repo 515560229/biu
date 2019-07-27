@@ -77,7 +77,7 @@
       </el-table>
     </el-row>
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
-      <json-editor v-model="needFormatValue" v-if="textFormat === 'json'"></json-editor>
+      <json-viewer copyable sort boxed :value="needFormatValue" v-if="textFormat === 'json'"></json-viewer>
       <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
     </el-dialog>
     <!--弹出窗口：新增/编辑-->
@@ -132,13 +132,12 @@
   import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
-  import JsonEditor from "../../components/JsonEditor/index";
   import MysqlEditor from "../../components/MysqlEditor/index";
   import {getParameters} from '@/utils/templateParser'
 
   export default {
     name: 'MySQL_SQL',
-    components: {JsonEditor, MysqlEditor},
+    components: {MysqlEditor},
     data() {
 
       let validateNotNull = (rule, value, callback) => {
