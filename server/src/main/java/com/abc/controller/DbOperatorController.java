@@ -4,11 +4,15 @@ import com.abc.annotation.PermInfo;
 import com.abc.entity.CommonConfig;
 import com.abc.entity.SysUser;
 import com.abc.service.CommonConfigService;
+import com.abc.util.freemarker.FreemarkerUtils;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
 import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
+import com.abc.vo.commonconfigvoproperty.HttpConfig;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.mysql.jdbc.Driver;
+import freemarker.template.TemplateException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +24,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PermInfo(value = "数据库操作模块", pval = "a:dbOperator:接口")
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/operator/db")
 public class DbOperatorController {
 
+    private static final Object MAX_ROWS = 50;
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -74,37 +76,47 @@ public class DbOperatorController {
     @PermInfo("执行SQL")
     @RequiresPermissions("a:dbOperator:execute")
     @PostMapping(value = "/execute")
-    public Json execute(@RequestBody CommonConfigVo commonConfigVo) throws SQLException {
+    public Json execute(@RequestBody CommonConfigVo commonConfigVo) throws SQLException, IOException, TemplateException {
         String oper = "dbOperateExecute";
         SysUser currentUser = (SysUser) SecurityUtils.getSubject().getPrincipal();
 
         JdbcTemplate jdbcTemplate = getJdbcTemplate(currentUser, commonConfigVo);
 
         DbQueryConfig dbQueryConfig = commonConfigVo.getDbQueryConfig();
-        String sql = dbQueryConfig.getSqlTemplate();
-        sql = sql.replaceAll("\\$\\{.*?}", "?");
+
         List<DbQueryConfig.Parameter> parameters = dbQueryConfig.getParameters();
-        Object[] sqlParamters = null;
-        if (parameters == null || parameters.isEmpty()) {
-            sqlParamters = new Object[0];
-        } else {
-            sqlParamters = new Object[parameters.size()];
-            for (int i = 0; i < parameters.size(); i++) {
-                sqlParamters[i] = parameters.get(i).getDefaultValue();
-            }
-        }
+        Map<String, Object> parameterMap = getParameterMap(parameters);
+        // sql = sql.replaceAll("\\$\\{.*?}", "?"); //将${xxx}变为?
+        String sql = dbQueryConfig.getSqlTemplate();
+        sql = FreemarkerUtils.INSTANCE.render(sql, parameterMap);
+
+        Map<String, Object> modelMap = new HashMap<>();
+        modelMap.put("executeSQL", sql);
         if (isSelectSQL(sql)) {
             //最多查询100条记录
-            List<Map<String, Object>> list = jdbcTemplate.query(sql, sqlParamters,new ColumnMapRowMapper());
-            return Json.result("dbOperateExecuteSelect", true, list);
+            List<Map<String, Object>> list = jdbcTemplate.query(getLimitSql(sql), new ColumnMapRowMapper());
+            modelMap.put("dataList", list);
+            return Json.result("dbOperateExecuteSelect", true, modelMap);
         } else {
-            int effectRowCount = jdbcTemplate.update(sql, sqlParamters);
+            int effectRowCount = jdbcTemplate.update(sql);
             List<Map<String, Object>> list = new ArrayList<>();
             Map<String, Object> obj = new HashMap<>();
             obj.put("result", String.format("受影响的行: %s", effectRowCount));
             list.add(obj);
-            return Json.result("dbOperateExecuteUpdate", true, list);
+            modelMap.put("dataList", list);
+            return Json.result("dbOperateExecuteUpdate", true, modelMap);
         }
+    }
+
+    private Map<String, Object> getParameterMap(List<DbQueryConfig.Parameter> parameters) throws IOException, TemplateException {
+        Map<String, Object> parameterMap = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(parameters)) {
+            for (DbQueryConfig.Parameter parameter : parameters) {
+                //参数的值可能是函数
+                parameterMap.put(parameter.getName(), FreemarkerUtils.INSTANCE.render(parameter.getDefaultValue(), Collections.emptyMap()));
+            }
+        }
+        return parameterMap;
     }
 
     public Object queryOneColumnForSigetonRow(JdbcTemplate jdbcTemplate, String sql, Object[] params, Class cla) {
@@ -161,6 +173,14 @@ public class DbOperatorController {
         page.setSize(pageSize);   //设置当前页数据
         page.setCurrent(pageIndex);    //设置总记录数
         return page;
+    }
+
+    private String getLimitSql(String sql) {
+        String trimSQL = sql.trim();
+        if (trimSQL.endsWith(";")) {
+            return String.format("select * from (%s) __limitTable__ limit %s", trimSQL.substring(0, trimSQL.length() - 1), MAX_ROWS);
+        }
+        return String.format("select * from (%s) __limitTable__ limit %s", trimSQL, MAX_ROWS);
     }
 
     private boolean isSelectSQL(String sql) {

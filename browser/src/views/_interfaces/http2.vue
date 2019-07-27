@@ -80,7 +80,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="page1.current"
-        :page-sizes="[1, 2, 10, 20, 30, 40, 50]"
+        :page-sizes="[10, 20, 30, 40, 50]"
         :page-size="page1.size"
         layout="total, sizes, prev, pager, next, jumper"
         :total="page1.total">
@@ -232,7 +232,7 @@
         httpInterfaceLoading: false,
         httpInterfaceData: [],
         httpInterfaceQuery: {
-          key: null,
+          key: '',
           type: "http"
         },
         page1: {
@@ -272,6 +272,7 @@
     created() {
     },
     mounted() {
+      this.findHttpInterface();
     },
     beforeDestroy() {
 
@@ -498,10 +499,10 @@
           } else if (parseInt(newTabName) > this.tabDatas.length) {
             newTabName = '1';//循环 超过则从1开始
           }
+          this.currentTabName = newTabName;
 
           this.$set(this.tableData, "data" + parseInt(newTabName - 1), data);
           this.$set(this.tableData, "loading" + idx, false);
-          this.currentTabName = newTabName;
         }).catch(e => {
           console.log(e);
           this.$set(this.tableData, "loading" + idx, false);

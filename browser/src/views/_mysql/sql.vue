@@ -5,6 +5,10 @@
         <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
         </el-button>
       </el-tooltip>
+      <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
+        <el-button type="primary" icon="el-icon-s-home" size="mini" circle plain @click="handleResetTabIndex">
+        </el-button>
+      </el-tooltip>
       <el-input v-model="dbQueryNamesQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
     </el-row>
     <el-row :gutter="24">
@@ -54,32 +58,33 @@
                 </el-form-item>
               </el-form>
             </template>
-            <!-- 结果面板 -->
-            <template v-if="tableData['data' + props.$index]">
-              <el-table style="width: 100%;height: 95%;"
-                        :data="tableData['data' + props.$index]"
-                        v-loading.body="tableData['loading' + props.$index]"
-                        element-loading-text="加载中"
-                        border fit highlight-current-row
-                        @cell-dblclick="handleCellDbClick"
-              >
-                <el-table-column :prop="column" :label="column"
-                                 v-for="(column,idx) in tableData['columns' + props.$index]"
-                                 :show-overflow-tooltip='true' :key="idx">
-                  <template slot-scope="scope">
-                    <span v-text="scope.row[column]"></span>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </template>
           </template>
         </el-table-column>
       </el-table>
     </el-row>
-    <el-dialog :visible.sync="formatDialogVisible" width="60%">
-      <json-viewer copyable sort boxed :value="needFormatValue" v-if="textFormat === 'json'"></json-viewer>
-      <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
-    </el-dialog>
+    <!--分页-->
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="page1.current"
+      :page-sizes="[10, 20, 30, 40, 50]"
+      :page-size="page1.size"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="page1.total">
+    </el-pagination>
+    <!-- 执行结果 -->
+    <el-row style="padding: 0 auto;margin:4px -14px;">
+      <el-tabs v-model="currentTabName" type="card" tab-position="left">
+        <el-tab-pane
+          v-for="(item, index) in tabDatas"
+          :key="item.name"
+          :label="item.title"
+          :name="item.name"
+        >
+          <db-result-panel :value="tableData['val' + index]"></db-result-panel>
+        </el-tab-pane>
+      </el-tabs>
+    </el-row>
     <!--弹出窗口：新增/编辑-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="80%">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="left" label-width="120px">
@@ -134,10 +139,11 @@
   import debounce from 'lodash/debounce'
   import MysqlEditor from "../../components/MysqlEditor/index";
   import {getParameters} from '@/utils/templateParser'
+  import DbResultPanel from '@/components/panel/DbResultPanel'
 
   export default {
     name: 'MySQL_SQL',
-    components: {MysqlEditor},
+    components: {MysqlEditor, DbResultPanel},
     data() {
 
       let validateNotNull = (rule, value, callback) => {
@@ -147,6 +153,16 @@
           callback();
         }
       };
+      let maxTabCount = 10;
+      let initTabs = function () {
+        let result = [];
+        for (let i = 0; i < maxTabCount; i++) {
+          let title = i + 1 + "";
+          result.push({'title': title, 'name': title})
+        }
+        return result;
+      };
+
       return {
         type: "dbQuery",
         storageKey: "MySQL_SQL",
@@ -157,15 +173,18 @@
         dbQueryNamesLoading: false,
         dbQueryNamesData: [],
         dbQueryNamesQuery: {
-          key: null,
+          key: '',
           type: "dbQuery"
         },
-        dbQueryNamesPage: {
+        page1: {
           current: null,
           pages: null,
-          size: null,
+          size: 10,
           total: null
         },
+        //tabs相关
+        currentTabName: '1',
+        tabDatas: initTabs(),
         //数据源查询相关变量
         dbNames: [],
         dbNamesLoading: false,
@@ -176,15 +195,11 @@
           total: null
         },
         dbNamesQuery: {
-          key: null,
+          key: '',
           type: "db"
         },
         //查询结果相关
-        tableData: {},
-        //格式化相关
-        needFormatValue: null,
-        formatDialogVisible: false,
-        textFormat: null,
+        tableData: [],
         //弹出框及新增和修改相关
         dialogFormVisible: false,
         dialogStatus: '',
@@ -211,6 +226,7 @@
     created() {
     },
     mounted() {
+      this.findDbQueryNames();
     },
     beforeDestroy() {
 
@@ -229,33 +245,22 @@
       //新增
       //数据库查询语句的相关操作
       findDbQueryNames() {
-        if (this.dbQueryNamesQuery.key !== '') {
-          this.dbQueryNamesLoading = true;
-
-          commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.dbQueryNamesPage).then(res => {
-            this.dbQueryNamesData = res.data.page.records;
-            this.dbQueryNamesLoading = false
-            this.tableData = {};
-          })
-        } else {
-          this.dbQueryNamesData = [];
+        this.dbQueryNamesLoading = true;
+        commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.page1).then(res => {
+          this.dbQueryNamesData = res.data.page.records;
+          this.dbQueryNamesLoading = false
           this.tableData = {};
-        }
+          pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
+        })
       },
-      handleCellDbClick(row, column, cell, event) {
-        let str = row[column.property];
-        if (str === undefined || str === '') {
-          return;
-        }
-        if (isJsonString(str)) {
-          this.textFormat = 'json';
-          this.formatDialogVisible = true;
-          this.needFormatValue = JSON.parse(row[column.property]);
-          return;
-        }
-        this.textFormat = 'text';
-        this.formatDialogVisible = true;
-        this.needFormatValue = str;
+      //分页
+      handleSizeChange(val) {
+        this.page1.size = val;
+        this.findDbQueryNames();
+      },
+      handleCurrentChange(val) {
+        this.page1.current = val;
+        this.findDbQueryNames();
       },
       handleCreate() {
         resetTemp(this.temp)
@@ -281,8 +286,17 @@
           this.$refs['dataForm'].clearValidate()
         })
       },
+      handleResetTabIndex() {
+        if (this.tableData.val0 != undefined) {
+          this.tableData.val0 = undefined;
+        }
+        this.currentTabName = '1';
+      },
       handleRowDbClick(row) {
-        this.$refs['sqlListTable'].toggleRowExpansion(row);
+        let _parameters = row.dbQueryConfig.parameters;
+        if (_parameters !== null && _parameters.length > 0) {
+          this.$refs['sqlListTable'].toggleRowExpansion(row);
+        }
       },
       createData() {
         this.$refs['dataForm'].validate((valid) => {
@@ -361,15 +375,29 @@
           }
         }
         dbOperateApi.execute(row).then(res => {
-          let data = res.data.data;
+          let data = res.data.data.dataList;
           let listColumns = [];
           if (data && data.length > 0) {
             listColumns = Object.keys(data[0]);
           }
-          this.$set(this.tableData, "data" + idx, data);
+
+          let activeName = this.currentTabName;
+          let newTabName = parseInt(activeName) + 1 + "";
+          if (this.tableData['val0'] === undefined || this.tableData['val0'] == null) {
+            newTabName = '1';//当前页未始初化. 也就是第1次加载的第1页
+          } else if (parseInt(newTabName) > this.tabDatas.length) {
+            newTabName = '1';//循环 超过则从1开始
+          }
+          this.currentTabName = newTabName;
+
+          this.$set(this.tableData, "val" + parseInt(newTabName - 1), {
+            data: data,
+            columns: listColumns,
+            executeSQL: res.data.data.executeSQL
+          });
           this.$set(this.tableData, "loading" + idx, false);
-          this.$set(this.tableData, "columns" + idx, listColumns);
         }).catch(e => {
+          console.log(e);
           this.$set(this.tableData, "loading" + idx, false);
         });
       },
