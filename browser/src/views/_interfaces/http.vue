@@ -44,101 +44,104 @@
         </el-table-column>
         <el-table-column type="expand">
           <template slot-scope="props">
-            <!-- 条件面板 -->
-            <template v-if="props.row.httpConfig.parameters && props.row.httpConfig.parameters.length > 0">
-              <el-form inline>
-                <el-form-item v-for="(param, index) in props.row.httpConfig.parameters"
-                              :key="'param' + props.$index + '_' + index">
-                  <el-tooltip class="item" effect="dark" :content="param.label" placement="right-start">
-                    <el-input v-model="param.defaultValue" :placeholder="param.label"
-                              style="margin: 4px;"></el-input>
-                  </el-tooltip>
-                </el-form-item>
-              </el-form>
-            </template>
-            <!-- 结果面板 -->
-            <template v-if="tableData['data' + props.$index]">
-              <el-row v-loading="tableData['loading' + props.$index]"
-                      element-loading-text="拼命加载中"
-                      element-loading-spinner="el-icon-loading"
-                      element-loading-background="rgba(0, 0, 0, 0.2)"
-              >
-                <el-row :gutter="24">
-                  <el-col :span="12">
-                    <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
-                      <el-tag type="success">{{tableData['data' + props.$index].request.url}}</el-tag>
-                    </template>
-                    <template v-else>
-                      <el-tag type="danger">{{tableData['data' + props.$index].request.url}}</el-tag>
-                    </template>
-                  </el-col>
-                  <el-col :span="12" style="text-align: right;">
-                    <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
-                      <el-tag type="success">{{tableData['data' +
-                        props.$index].response.statusCodeValue}}/{{tableData['data' +
-                        props.$index].response.statusCode}}
-                      </el-tag>
-                    </template>
-                    <template v-else>
-                      <el-tag type="danger">{{tableData['data' +
-                        props.$index].response.statusCodeValue}}/{{tableData['data' +
-                        props.$index].response.statusCode}}
-                      </el-tag>
-                    </template>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="24">
-                  <el-col :span="12">
-                    headers:
-                  </el-col>
-                  <el-col :span="12">
-                    headers:
-                  </el-col>
-                </el-row>
-                <el-row :gutter="24">
-                  <el-col :span="12">
-                    <el-row style="padding-left: 20px;">
-                      <el-row v-for="(value, name) in tableData['data' + props.$index].request.headers" :key="name">
-                        {{name}}:{{value}}
+            <el-row v-loading="tableData['loading' + props.$index]"
+                    element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading"
+                    element-loading-background="rgba(0, 0, 0, 0.2)"
+                    style="border: 1px solid #91bbe9;"
+            >
+              <!-- 条件面板 -->
+              <template v-if="props.row.httpConfig.parameters && props.row.httpConfig.parameters.length > 0">
+                <el-form inline>
+                  <el-form-item v-for="(param, index) in props.row.httpConfig.parameters"
+                                :key="'param' + props.$index + '_' + index">
+                    <el-tooltip class="item" effect="dark" :content="param.label" placement="right-start">
+                      <el-input v-model="param.defaultValue" :placeholder="param.label"
+                                style="margin: 4px;"></el-input>
+                    </el-tooltip>
+                  </el-form-item>
+                </el-form>
+              </template>
+              <!-- 结果面板 -->
+              <template v-if="tableData['data' + props.$index]">
+                <el-row>
+                  <el-row :gutter="24">
+                    <el-col :span="12">
+                      <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
+                        <el-tag type="success">{{tableData['data' + props.$index].request.url}}</el-tag>
+                      </template>
+                      <template v-else>
+                        <el-tag type="danger">{{tableData['data' + props.$index].request.url}}</el-tag>
+                      </template>
+                    </el-col>
+                    <el-col :span="12" style="text-align: right;">
+                      <template v-if="tableData['data' + props.$index].response.statusCodeValue === 200">
+                        <el-tag type="success">{{tableData['data' +
+                          props.$index].response.statusCodeValue}}/{{tableData['data' +
+                          props.$index].response.statusCode}}
+                        </el-tag>
+                      </template>
+                      <template v-else>
+                        <el-tag type="danger">{{tableData['data' +
+                          props.$index].response.statusCodeValue}}/{{tableData['data' +
+                          props.$index].response.statusCode}}
+                        </el-tag>
+                      </template>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="24">
+                    <el-col :span="12">
+                      headers:
+                    </el-col>
+                    <el-col :span="12">
+                      headers:
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="24">
+                    <el-col :span="12">
+                      <el-row style="padding-left: 20px;">
+                        <el-row v-for="(value, name) in tableData['data' + props.$index].request.headers" :key="name">
+                          {{name}}:{{value}}
+                        </el-row>
                       </el-row>
-                    </el-row>
-                  </el-col>
-                  <el-col :span="12">
-                    <el-row style="padding-left: 20px;">
-                      <el-row v-for="(value, name) in tableData['data' + props.$index].response.headers" :key="name">
-                        {{name}}:{{value}}
+                    </el-col>
+                    <el-col :span="12">
+                      <el-row style="padding-left: 20px;">
+                        <el-row v-for="(value, name) in tableData['data' + props.$index].response.headers" :key="name">
+                          {{name}}:{{value}}
+                        </el-row>
                       </el-row>
-                    </el-row>
-                  </el-col>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="24">
+                    <el-col :span="12">
+                      <template v-if="tableData['data' + props.$index].request.body != null">
+                        requestBody:
+                        <el-row style="padding: 0 20px;">
+                          <el-input type="textarea" :autosize='requestBodySize'
+                                    v-model="tableData['data' + props.$index].request.body" readonly></el-input>
+                        </el-row>
+                      </template>
+                      <template v-else>
+                        &nbsp;
+                      </template>
+                    </el-col>
+                    <el-col :span="12">
+                      <template v-if="tableData['data' + props.$index].response.body != null">
+                        responseBody:
+                        <el-row style="padding: 0 20px;">
+                          <el-input type="textarea" :autosize='requestBodySize'
+                                    v-model="tableData['data' + props.$index].response.body" readonly></el-input>
+                        </el-row>
+                      </template>
+                      <template v-else>
+                        &nbsp;
+                      </template>
+                    </el-col>
+                  </el-row>
                 </el-row>
-                <el-row :gutter="24">
-                  <el-col :span="12">
-                    <template v-if="tableData['data' + props.$index].request.body != null">
-                      requestBody:
-                      <el-row style="padding: 0 20px;">
-                        <el-input type="textarea" :autosize='requestBodySize'
-                                  v-model="tableData['data' + props.$index].request.body" readonly></el-input>
-                      </el-row>
-                    </template>
-                    <template v-else>
-                      &nbsp;
-                    </template>
-                  </el-col>
-                  <el-col :span="12">
-                    <template v-if="tableData['data' + props.$index].response.body != null">
-                      responseBody:
-                      <el-row style="padding: 0 20px;">
-                        <el-input type="textarea" :autosize='requestBodySize'
-                                  v-model="tableData['data' + props.$index].response.body" readonly></el-input>
-                      </el-row>
-                    </template>
-                    <template v-else>
-                      &nbsp;
-                    </template>
-                  </el-col>
-                </el-row>
-              </el-row>
-            </template>
+              </template>
+            </el-row>
           </template>
         </el-table-column>
       </el-table>
@@ -515,6 +518,7 @@
           for (let i in _parameters) {
             if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
               this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
+              this.$set(this.tableData, "loading" + idx, false);
               return;
             }
           }
