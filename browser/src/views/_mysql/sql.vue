@@ -49,7 +49,7 @@
           type="index"
           width="30">
         </el-table-column>
-        <el-table-column align="right" width="140px">
+        <el-table-column align="left" width="178px">
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
               <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
@@ -57,6 +57,11 @@
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
               <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="复制" placement="top">
+              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-document-copy"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="执行" placement="top">
@@ -124,7 +129,7 @@
 
   import commonConfigApi from '@/api/config/commonConfig'
   import dbOperateApi from '@/api/operate/dbOperateApi'
-  import {parseTime, resetTemp, isJsonString} from '@/utils'
+  import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
   import JsonEditor from "../../components/JsonEditor/index";
@@ -262,9 +267,17 @@
         })
       },
       handleEdit(idx, sqlEntity) {
-        this.temp = sqlEntity;
+        this.temp = deepClone(sqlEntity);
         this.dialogStatus = 'update';
         this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      handleCopy(idx, sqlEntity) {
+        this.temp = deepClone(sqlEntity);
+        this.dialogStatus = 'update';
+        this.dialogFormVisible = create;
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()
         })

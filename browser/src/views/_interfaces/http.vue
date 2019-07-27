@@ -114,14 +114,21 @@
           type="index"
           width="30">
         </el-table-column>
-        <el-table-column align="right" width="140px">
+        <el-table-column align="left" width="178px">
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
               <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)" @dblclick="handleEditByCopy(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+              <el-button @click="handleEdit(scope.$index, scope.row)"
+                         size="mini" type="info"
+                         icon="el-icon-edit"
+                         circle plain></el-button>
+            </el-tooltip>
+            <el-tooltip content="复制" placement="top">
+              <el-button @click="handleCopy(scope.$index, scope.row)" size="mini" type="info"
+                         icon="el-icon-document-copy"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="执行" placement="top">
@@ -363,6 +370,7 @@
         })
       },
       handleEdit(idx, sqlEntity) {
+        console.log("handleEdit")
         this.temp = deepClone(sqlEntity);
         this.dialogStatus = 'update';
         this.dialogFormVisible = true;
@@ -370,7 +378,8 @@
           this.$refs['dataForm'].clearValidate()
         })
       },
-      handleEditByCopy(idx, sqlEntity) {
+      handleCopy(idx, sqlEntity) {
+        console.log("handleEditByCopy")
         this.temp = deepClone(sqlEntity);
         this.temp.id = null;
         this.dialogStatus = 'create';
