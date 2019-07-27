@@ -64,6 +64,8 @@ dependencies {
     compile 'org.apache.commons:commons-lang3'
 
     compile 'org.freemarker:freemarker:2.3.22'
+    compile group: 'wsdl4j', name: 'wsdl4j', version: '1.6.3'
+
 }
 
 //设置后依赖不用写版本号
