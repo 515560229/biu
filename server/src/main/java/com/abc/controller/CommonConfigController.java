@@ -2,17 +2,19 @@ package com.abc.controller;
 
 import com.abc.annotation.PermInfo;
 import com.abc.entity.CommonConfig;
+import com.abc.entity.SysUser;
 import com.abc.service.CommonConfigService;
+import com.abc.util.CurrentUser;
 import com.abc.util.PageUtils;
 import com.abc.vo.CommonConfigQueryCondition;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
-import com.abc.vo.Option;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.mysql.jdbc.Driver;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Optional;
 
 @PermInfo(value = "通用配置模块", pval = "a:commonConfig:接口")
 @RestController
@@ -44,6 +45,8 @@ public class CommonConfigController {
         }
         commonConfigVo.setCreated(new Date());
         commonConfigVo.setUpdated(commonConfigVo.getCreated());
+        commonConfigVo.setModifier(CurrentUser.getUsername());
+        commonConfigVo.setCreator(CurrentUser.getUsername());
 
         boolean success = commonConfigService.insert(commonConfigVo.toEntity());
         return Json.result(oper, success, commonConfigVo);
@@ -91,6 +94,7 @@ public class CommonConfigController {
         commonConfigDB.setValue(commonConfigVo.toEntity().getValue());
         commonConfigDB.setDesc(commonConfigVo.getDesc());
         commonConfigDB.setUpdated(new Date());
+        commonConfigDB.setModifier(CurrentUser.getUsername());
 
         boolean success = commonConfigService.updateById(commonConfigDB);
         return Json.result(oper, success, commonConfigDB);
@@ -135,6 +139,11 @@ public class CommonConfigController {
             wrapper.andNew().like(true, "`name`", queryCondition.getKey());
             wrapper.or().like(true, "`desc`", queryCondition.getKey());
         }
+        if (queryCondition.getOnlyCreateByMine() != null
+                && queryCondition.getOnlyCreateByMine()) {
+            wrapper.eq("creator", CurrentUser.getUsername());
+        }
+        wrapper.orderBy("name");
         Page<CommonConfig> page = commonConfigService.selectPage(PageUtils.getPageParam(queryCondition), wrapper);
         if (!page.getRecords().isEmpty()) {
             for (int i = 0; i < page.getRecords().size(); i++) {
