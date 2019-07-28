@@ -251,10 +251,6 @@
           {"value": 'PUT'},
           {"value": 'DELETE'}
         ],
-        requestBodySize: {
-          minRows: 16,
-          maxRows: 16
-        },
         //格式化
         requestBodyFormat: 'json',
         responseBodyFormat: 'json',

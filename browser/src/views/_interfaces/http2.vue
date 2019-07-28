@@ -1,17 +1,37 @@
 <template>
   <div class="app-container">
     <!-- 查询条件 -->
-    <el-row>
-      <el-tooltip content="新增" placement="top">
-        <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
-        </el-button>
-      </el-tooltip>
-      <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
-        <el-button type="primary" icon="el-icon-s-home" size="mini" circle plain @click="handleResetTabIndex">
-        </el-button>
-      </el-tooltip>
-      <el-input v-model="httpInterfaceQuery.key" size="mini" placeholder="输入关键字搜索"
-                style="width: 80%;margin-left: 10px;"/>
+    <el-row :gutter="16">
+      <el-col :span="2" style="text-align: center;">
+        <el-tooltip content="新增" placement="top">
+          <el-button type="primary" icon="el-icon-plus" size="small" circle plain @click="handleCreate">
+          </el-button>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="2" style="text-align: center;">
+        <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
+          <el-button type="primary" icon="el-icon-s-home" size="small" circle plain @click="handleResetTabIndex">
+          </el-button>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="8">
+        <el-input v-model="httpInterfaceQuery.key" size="small" placeholder="输入关键字搜索"
+                  style="width: 100%;margin-left: 10px;"/>
+      </el-col>
+      <el-col :span="4">
+        <!--分页-->
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="page1.current"
+          :page-sizes="[5, 10, 20, 30, 40, 50]"
+          :page-size="page1.size"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="page1.total"
+          background
+        >
+        </el-pagination>
+      </el-col>
     </el-row>
     <!-- 查询结果 -->
     <el-row :gutter="24">
@@ -75,26 +95,19 @@
           </template>
         </el-table-column>
       </el-table>
-      <!--分页-->
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="page1.current"
-        :page-sizes="[10, 20, 30, 40, 50]"
-        :page-size="page1.size"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="page1.total">
-      </el-pagination>
     </el-row>
     <!-- 执行结果 -->
     <el-row style="padding: 0 auto;margin:4px -14px;">
-      <el-tabs v-model="currentTabName" type="card" tab-position="left">
+      <el-tabs v-model="currentTabName" type="card">
         <el-tab-pane
           v-for="(item, index) in tabDatas"
           :key="item.name"
           :label="item.title"
           :name="item.name"
         >
+          <span slot="label"><i
+            v-bind:class="{'el-icon-date': !tabLoading['loading' + (index + 1)], 'el-icon-loading': tabLoading['loading' + (index + 1)]}"
+            v-if="item.title == currentTabName"></i>{{item.title}}</span>
           <http-result-panel :value="tableData['data' + index]"></http-result-panel>
         </el-tab-pane>
       </el-tabs>
@@ -171,6 +184,7 @@
         </template>
       </el-form>
       <div slot="footer" class="dialog-footer">
+        <el-button @click="handleFormatRequestBody">格式化请求体</el-button>
         <el-button type="primary" @click="generateParameter()">生成参数</el-button>
         <el-button @click="dialogFormVisible = false">取消</el-button>
         <el-button v-if="dialogStatus==='create'" type="primary" @click="createData">创建</el-button>
@@ -184,19 +198,17 @@
 
   import commonConfigApi from '@/api/config/commonConfig'
   import httpApi from '@/api/operate/httpApi'
-  import {deepClone, isJsonString, resetTemp} from '@/utils'
+  import {deepClone, isJsonString, resetTemp, formatString} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
   import debounce from 'lodash/debounce'
   import {getParameters} from '@/utils/templateParser'
   import HttpResultPanel from '@/components/panel/HttpResultPanel'
-  //https://github.com/vkiryukhin/pretty-data
-  let pd = require('pretty-data').pd;
 
   export default {
     name: 'INTERFACE_HTTP',
     components: {HttpResultPanel},
     data() {
-      let maxTabCount = 10;
+      let maxTabCount = 15;
       let initTabs = function () {
         let result = [];
         for (let i = 0; i < maxTabCount; i++) {
@@ -221,13 +233,12 @@
         },
         //tabs相关
         currentTabName: '1',
+        nextTabName: '1',
         tabDatas: initTabs(),
+        tabLoading: {},
         //格式化
         requestBodyFormat: 'json',
         responseBodyFormat: 'json',
-        //方法
-        isJsonString: isJsonString,
-        getParameters: getParameters,
         //DB查询列表 相关的变量
         httpInterfaceLoading: false,
         httpInterfaceData: [],
@@ -293,17 +304,13 @@
       //新增
       //数据库查询语句的相关操作
       findHttpInterface() {
-        if (this.httpInterfaceQuery.key !== '') {
-          this.httpInterfaceLoading = true;
+        this.httpInterfaceLoading = true;
 
-          commonConfigApi.queryCommonConfig(this.httpInterfaceQuery, this.page1).then(res => {
-            this.httpInterfaceData = res.data.page.records;
-            this.httpInterfaceLoading = false;
-            pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
-          })
-        } else {
-          this.httpInterfaceData = [];
-        }
+        commonConfigApi.queryCommonConfig(this.httpInterfaceQuery, this.page1).then(res => {
+          this.httpInterfaceData = res.data.page.records;
+          this.httpInterfaceLoading = false;
+          pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
+        })
       },
       //分页
       handleSizeChange(val) {
@@ -330,11 +337,15 @@
       handleDeleteHeader(idx) {
         this.temp.httpConfig.headers.splice(idx, 1);
       },
+      handleFormatRequestBody() {
+        this.temp.httpConfig.body = formatString(this.temp.httpConfig.body);
+      },
       handleResetTabIndex() {
         if (this.tableData.data0 != undefined) {
           this.tableData.data0 = undefined;
         }
         this.currentTabName = '1';
+        this.nextTabName = '1';
       },
       handleCreate() {
         resetTemp(this.temp)
@@ -467,7 +478,14 @@
         }
       },
       executeData(idx, row) {
+        //设置条件lading
         this.$set(this.tableData, "loading" + idx, true);
+        //设置当前标签页
+        this.currentTabName = this.nextTabName;
+        //设置当前标签页的loading
+        this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), true);
+        //当前标签页数据置空
+        this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), null);
         //验证参数是否为空
         let _parameters = row.httpConfig.parameters;
         if (_parameters !== null && _parameters.length > 0) {
@@ -484,28 +502,23 @@
         httpApi.execute(row).then(res => {
           let data = res.data.data;
 
-          if (isJsonString(data.request.body)) {
-            data.request.body = pd.json(data.request.body);
-            data.response.body = pd.json(data.response.body);
-          } else {
-            data.request.body = pd.xml(data.request.body);
-            data.response.body = pd.xml(data.response.body);
+          data.request.body = formatString(data.request.body);
+          data.response.body = formatString(data.response.body);
+          //计算下个标签页
+          this.nextTabName = parseInt(this.currentTabName) + 1 + "";
+          if (parseInt(this.nextTabName) > this.tabDatas.length) {
+            this.nextTabName = '1';//循环 超过则从1开始
           }
 
-          let activeName = this.currentTabName;
-          let newTabName = parseInt(activeName) + 1 + "";
-          if (this.tableData['data0'] === undefined || this.tableData['data0'] == null) {
-            newTabName = '1';//当前页未始初化. 也就是第1次加载的第1页
-          } else if (parseInt(newTabName) > this.tabDatas.length) {
-            newTabName = '1';//循环 超过则从1开始
-          }
-          this.currentTabName = newTabName;
-
-          this.$set(this.tableData, "data" + parseInt(newTabName - 1), data);
+          this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), data);
           this.$set(this.tableData, "loading" + idx, false);
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         }).catch(e => {
           console.log(e);
+          //当前标签页数据置空
+          this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), null);
           this.$set(this.tableData, "loading" + idx, false);
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         });
       },
       formatter(val) {

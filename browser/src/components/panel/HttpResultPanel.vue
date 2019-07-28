@@ -1,25 +1,21 @@
 <template>
-  <el-row v-if="value !== undefined" style="font-size: 12px;">
+  <el-row v-if="value !== undefined && value !== null" style="font-size: 12px;">
     <el-row>
       <el-row :gutter="24">
-        <el-col :span="12">
-          <template v-if="value.response.statusCodeValue === 200">
-            <el-tag type="success">{{value.request.url}}</el-tag>
-          </template>
-          <template v-else>
-            <el-tag type="danger">{{value.request.url}}</el-tag>
-          </template>
-        </el-col>
-        <el-col :span="12" style="text-align: right;">
-          <template v-if="value.response.statusCodeValue === 200">
-            <el-tag type="success">{{value.response.statusCodeValue}}/{{value.response.statusCode}}
-            </el-tag>
-          </template>
-          <template v-else>
-            <el-tag type="danger">{{value.response.statusCodeValue}}/{{value.response.statusCode}}
-            </el-tag>
-          </template>
-        </el-col>
+        <template v-if="value.response.statusCodeValue === 200">
+          <el-tag type="success">{{value.request.url}}</el-tag>
+        </template>
+        <template v-else>
+          <el-tag type="danger">{{value.request.url}}</el-tag>
+        </template>
+        <template v-if="value.response.statusCodeValue === 200">
+          <el-tag type="success">{{value.response.statusCodeValue}}/{{value.response.statusCode}}
+          </el-tag>
+        </template>
+        <template v-else>
+          <el-tag type="danger">{{value.response.statusCodeValue}}/{{value.response.statusCode}}
+          </el-tag>
+        </template>
       </el-row>
       <!-- http headers -->
       <el-row :gutter="24">
@@ -51,7 +47,7 @@
           <template v-if="value.request.body != null">
             requestBody:
             <el-row style="padding: 0 20px;">
-              <el-input type="textarea" :autosize='requestBodySize'
+              <el-input type="textarea" :autosize='bodySize'
                         v-model="value.request.body" readonly size="small"></el-input>
             </el-row>
           </template>
@@ -63,7 +59,7 @@
           <template v-if="value.response.body != null">
             responseBody:
             <el-row style="padding: 0 20px;">
-              <el-input type="textarea" :autosize='requestBodySize'
+              <el-input type="textarea" :autosize='bodySize'
                         v-model="value.response.body" readonly size="small"></el-input>
             </el-row>
           </template>
@@ -90,14 +86,13 @@
     },
     data() {
       return {
-        requestBodySize: {
+        bodySize: {
           minRows: 12,
           maxRows: 12
         }
       }
     },
-    watch: {
-    },//watch
+    watch: {},//watch
     mounted() {
     },
     computed: {},

@@ -1,15 +1,35 @@
 <template>
   <div class="app-container">
-    <el-row>
-      <el-tooltip content="新增" placement="top">
-        <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
-        </el-button>
-      </el-tooltip>
-      <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
-        <el-button type="primary" icon="el-icon-s-home" size="mini" circle plain @click="handleResetTabIndex">
-        </el-button>
-      </el-tooltip>
-      <el-input v-model="dbQueryNamesQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
+    <el-row :gutter="16">
+      <el-col :span="2" style="text-align: center;">
+        <el-tooltip content="新增" placement="top">
+          <el-button type="primary" icon="el-icon-plus" size="mini" circle plain @click="handleCreate">
+          </el-button>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="2" style="text-align: center;">
+        <el-tooltip content="重置标签页。重置后执行的查询结果将从1号标签页开始" placement="top">
+          <el-button type="primary" icon="el-icon-s-home" size="mini" circle plain @click="handleResetTabIndex">
+          </el-button>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="6">
+        <el-input v-model="dbQueryNamesQuery.key" size="mini" placeholder="输入关键字搜索" style="width: 80%;"/>
+      </el-col>
+      <el-col :span="6">
+        <!--分页-->
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="page1.current"
+          :page-sizes="[5, 10, 20, 30, 40, 50]"
+          :page-size="page1.size"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="page1.total"
+          background
+        >
+        </el-pagination>
+      </el-col>
     </el-row>
     <el-row :gutter="24">
       <el-table
@@ -62,25 +82,18 @@
         </el-table-column>
       </el-table>
     </el-row>
-    <!--分页-->
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="page1.current"
-      :page-sizes="[10, 20, 30, 40, 50]"
-      :page-size="page1.size"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="page1.total">
-    </el-pagination>
     <!-- 执行结果 -->
     <el-row style="padding: 0 auto;margin:4px -14px;">
-      <el-tabs v-model="currentTabName" type="card" tab-position="left">
+      <el-tabs v-model="currentTabName" type="card">
         <el-tab-pane
           v-for="(item, index) in tabDatas"
           :key="item.name"
           :label="item.title"
           :name="item.name"
         >
+          <span slot="label"><i
+            v-bind:class="{'el-icon-date': !tabLoading['loading' + (index + 1)], 'el-icon-loading': tabLoading['loading' + (index + 1)]}"
+            v-if="item.title == currentTabName"></i>{{item.title}}</span>
           <db-result-panel :value="tableData['val' + index]"></db-result-panel>
         </el-tab-pane>
       </el-tabs>
@@ -153,7 +166,7 @@
           callback();
         }
       };
-      let maxTabCount = 10;
+      let maxTabCount = 15;
       let initTabs = function () {
         let result = [];
         for (let i = 0; i < maxTabCount; i++) {
@@ -166,9 +179,6 @@
       return {
         type: "dbQuery",
         storageKey: "MySQL_SQL",
-        //方法
-        isJsonString: isJsonString,
-        getParameters: getParameters,
         //DB查询列表 相关的变量
         dbQueryNamesLoading: false,
         dbQueryNamesData: [],
@@ -184,7 +194,9 @@
         },
         //tabs相关
         currentTabName: '1',
+        nextTabName: '1',
         tabDatas: initTabs(),
+        tabLoading: {},
         //数据源查询相关变量
         dbNames: [],
         dbNamesLoading: false,
@@ -291,6 +303,7 @@
           this.tableData.val0 = undefined;
         }
         this.currentTabName = '1';
+        this.nextTabName = '1';
       },
       handleRowDbClick(row) {
         let _parameters = row.dbQueryConfig.parameters;
@@ -364,6 +377,12 @@
       executeData(idx, row) {
         //展开
         this.$refs['sqlListTable'].toggleRowExpansion(row, true);
+        //设置当前标签页
+        this.currentTabName = this.nextTabName;
+        //设置当前标签页的loading
+        this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), true);
+        //当前标签页数据置空
+        this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {});
         //验证参数是否为空
         let _parameters = row.dbQueryConfig.parameters;
         if (_parameters !== null && _parameters.length > 0) {
@@ -380,25 +399,27 @@
           if (data && data.length > 0) {
             listColumns = Object.keys(data[0]);
           }
-
-          let activeName = this.currentTabName;
-          let newTabName = parseInt(activeName) + 1 + "";
-          if (this.tableData['val0'] === undefined || this.tableData['val0'] == null) {
-            newTabName = '1';//当前页未始初化. 也就是第1次加载的第1页
-          } else if (parseInt(newTabName) > this.tabDatas.length) {
-            newTabName = '1';//循环 超过则从1开始
+          //计算下个标签页
+          this.nextTabName = parseInt(this.currentTabName) + 1 + "";
+          if (parseInt(this.nextTabName) > this.tabDatas.length) {
+            this.nextTabName = '1';//循环 超过则从1开始
           }
-          this.currentTabName = newTabName;
 
-          this.$set(this.tableData, "val" + parseInt(newTabName - 1), {
+          this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {
             data: data,
             columns: listColumns,
             executeSQL: res.data.data.executeSQL
           });
           this.$set(this.tableData, "loading" + idx, false);
+          //设置当前标签页的loading
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         }).catch(e => {
           console.log(e);
           this.$set(this.tableData, "loading" + idx, false);
+          //设置当前标签页的loading
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+          //当前标签页数据置空
+          this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {});
         });
       },
       //查找数据源

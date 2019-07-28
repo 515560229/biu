@@ -1,7 +1,6 @@
 /**
  * Created by jiachenpan on 16/11/18.
  */
-
 export function parseTime(time, cFormat) {
   if (arguments.length === 0) {
     return null
@@ -296,4 +295,19 @@ export function isJsonString(str) {
   } catch (e) {
   }
   return false;
+}
+
+export function formatString(str) {
+  //https://github.com/vkiryukhin/pretty-data
+  let pd = require('pretty-data').pd;
+  if (isJsonString(str)) {
+    return pd.json(str);
+  } else {
+    let result = str;
+    try {
+      result = pd.xml(str);
+    } catch (e) {
+    }
+    return result;
+  }
 }

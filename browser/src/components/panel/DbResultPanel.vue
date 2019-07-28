@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <el-row v-if="value !== undefined" style="font-size: 12px;">
+    <el-row v-if="value !== undefined && value != null" style="font-size: 12px;">
       <div>{{value.executeSQL}}</div>
       <!-- 结果面板 -->
       <el-table style="width: 100%;height: 95%;"
@@ -20,8 +20,8 @@
       </el-table>
     </el-row>
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
-      <json-viewer copyable sort boxed :value="needFormatValue" v-if="textFormat === 'json'"></json-viewer>
-      <div v-if="textFormat === 'text'">{{needFormatValue}}</div>
+      <el-input type="textarea" :autosize='cellDetailsSize'
+                v-model="needFormatValue" readonly size="small"></el-input>
     </el-dialog>
   </el-row>
 </template>
@@ -45,11 +45,10 @@
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
-        textFormat: null,
 
-        requestBodySize: {
-          minRows: 12,
-          maxRows: 12
+        cellDetailsSize: {
+          minRows: 16,
+          maxRows: 20
         }
       }
     },
@@ -60,19 +59,21 @@
     methods: {
       handleCellDbClick(row, column, cell, event) {
         let str = row[column.property];
-        if (str === undefined || str === '') {
+        if (str === undefined || str == null || str === '') {
           return;
         }
-        if (isJsonString(str)) {
-          this.textFormat = 'json';
-          this.formatDialogVisible = true;
-          this.needFormatValue = JSON.parse(row[column.property]);
-          return;
-        }
-        this.textFormat = 'text';
+
         this.formatDialogVisible = true;
-        this.needFormatValue = str;
-      },
+        if (isJsonString(str)) {
+          this.needFormatValue = pd.json(str);
+        } else {
+          try {
+            this.needFormatValue = pd.xml(str);
+          } catch (e) {
+            this.needFormatValue = str;
+          }
+        }
+      }
     }
   }
 </script>
