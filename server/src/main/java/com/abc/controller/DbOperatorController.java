@@ -30,7 +30,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@PermInfo(value = "数据库操作模块", pval = "a:dbOperator:接口")
+@PermInfo(value = "MySQL模块", pval = "a:MySQL:接口")
 @RestController
 @RequestMapping("/operator/db")
 public class DbOperatorController {
@@ -74,7 +74,7 @@ public class DbOperatorController {
     }
 
     @PermInfo("执行SQL")
-    @RequiresPermissions("a:dbOperator:execute")
+    @RequiresPermissions("a:MySQL:execute")
     @PostMapping(value = "/execute")
     public Json execute(@RequestBody CommonConfigVo commonConfigVo) throws SQLException, IOException, TemplateException {
         String oper = "dbOperateExecute";

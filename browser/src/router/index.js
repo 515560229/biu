@@ -56,25 +56,25 @@ export const asyncRouterMap = [
   {
     path: '/examples',
     component: Layout,
-    meta: {title: '练习', icon: 'chart'},
+    meta: {perm: 'm:examples', title: '练习', icon: 'chart'},
     children: [
       {
         path: 'examples1',
         name: 'examples1',
         component: _import('_examples/mysqlEditor'),
-        meta: {title: 'MySQLEditor', icon: 'chart', noCache: false}
+        meta: {perm: 'm:examples:MySQLEditor', title: 'MySQLEditor', icon: 'chart', noCache: false}
       },
       {
         path: 'examples2',
         name: 'examples2',
         component: _import('_examples/mysqlEditor2'),
-        meta: {title: 'MySQLEditor2', icon: 'chart', noCache: false}
+        meta: {perm: 'm:examples:MySQLEditor2', title: 'MySQLEditor2', icon: 'chart', noCache: false}
       },
       {
         path: 'tabs',
         name: 'tabs',
         component: _import('_examples/tabs'),
-        meta: {title: 'tabs练习', icon: 'chart', noCache: false}
+        meta: {perm: 'm:examples:tabs', title: 'tabs练习', icon: 'chart', noCache: false}
       }
     ]
   },
@@ -184,7 +184,7 @@ export const asyncRouterMap = [
         name: 'http',
         component: _import('_interfaces/http'),
         hidden: true,
-        meta: {title: 'httpRest', icon: 'chart', noCache: false}
+        meta: {title: 'http1', icon: 'chart', noCache: false}
       },
       {
         path: 'http2',

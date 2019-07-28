@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@PermInfo(value = "数据库操作模块", pval = "a:dbOperator:接口")
+@PermInfo(value = "HTTP模块", pval = "a:http:接口")
 @RestController
 @RequestMapping("/http/executor")
 public class HttpExecutorController {

@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.SQLException;
 import java.util.Date;
 
-@PermInfo(value = "通用配置模块", pval = "a:commonConfig:接口")
+@PermInfo(value = "通用配置模块", pval = "a:config:接口")
 @RestController
 @RequestMapping("/config/common")
 public class CommonConfigController {
@@ -36,7 +36,7 @@ public class CommonConfigController {
     private CommonConfigService commonConfigService;
 
     @PermInfo("添加通用配置")
-    @RequiresPermissions("a:config:common:add")
+    @RequiresPermissions("a:config:add")
     @PostMapping
     public Json add(@RequestBody CommonConfigVo commonConfigVo) {
         String oper = "add common config";
@@ -53,7 +53,7 @@ public class CommonConfigController {
     }
 
     @PermInfo("测试连接")
-    @RequiresPermissions("a:config:common:add")
+    @RequiresPermissions("a:config:testDBConnection")
     @PostMapping(value = "/db/testDBConnection")
     public Json testDBConnection(@RequestBody CommonConfigVo commonConfigVo) {
         String oper = "testDBConnection";
@@ -73,7 +73,7 @@ public class CommonConfigController {
     }
 
     @PermInfo("更新通用配置")
-    @RequiresPermissions("a:config:common:update")
+    @RequiresPermissions("a:config:update")
     @PutMapping
     public Json update(@RequestBody CommonConfigVo commonConfigVo) {
         String oper = "update common config";
@@ -113,7 +113,7 @@ public class CommonConfigController {
     }
 
     @PermInfo("删除通用配置")
-    @RequiresPermissions("a:config:common:delete")
+    @RequiresPermissions("a:config:delete")
     @DeleteMapping(value = "/{id}")
     public Json delete(@PathVariable("id") Long id) {
         String oper = "delete common config";
@@ -126,7 +126,7 @@ public class CommonConfigController {
     }
 
     @PermInfo("查询所有通用配置")
-    @RequiresPermissions("a:config:common:selectPage")
+    @RequiresPermissions("a:config:selectPage")
     @PostMapping("/query")
     public Json query(@RequestBody CommonConfigQueryCondition queryCondition) {
         String oper = "query common config";
