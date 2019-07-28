@@ -1,11 +1,11 @@
 package com.abc.util.freemarker;
 
+import com.abc.exception.MessageRuntimeException;
 import freemarker.template.*;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class FreemarkerUtils {
@@ -13,9 +13,12 @@ public class FreemarkerUtils {
 
     private Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
 
-    public FreemarkerUtils() {
+    private FreemarkerUtils() {
         cfg.setDefaultEncoding("UTF-8");
-        cfg.setSharedVariable("now", new Now());
+        Arrays.asList(new NowFunction()
+                , new UUIDFunction()
+                , new RandomIntFunction())
+                .forEach(fun -> cfg.setSharedVariable(fun.getFunctionName(), fun));
     }
 
     public String render(String stringTemplate, Map<String, Object> params) throws IOException, TemplateException {
@@ -25,7 +28,7 @@ public class FreemarkerUtils {
         return writer.toString();
     }
 
-    private static Object getObject(TemplateModel model){
+    static Object getObject(TemplateModel model) {
         if (model instanceof SimpleNumber) {
             // Number
             return ((SimpleNumber) model).getAsNumber();
@@ -39,35 +42,22 @@ public class FreemarkerUtils {
             return ((SimpleScalar) model).getAsString();
         }
         if (model instanceof DefaultArrayAdapter) {
-            return ((DefaultArrayAdapter)model).getWrappedObject();
+            return ((DefaultArrayAdapter) model).getWrappedObject();
         }
         if (model instanceof DefaultListAdapter) {
-            return (List<?>)((DefaultListAdapter)model).getWrappedObject();
+            return ((DefaultListAdapter) model).getWrappedObject();
         }
-        throw new RuntimeException("参数格式不正确");
+        throw new MessageRuntimeException("参数格式不正确");
     }
 
     public static void main(String[] args) throws IOException, TemplateException {
-        String template = "a ${b} c ${d} ${now('yyyy-MM-dd HH:mm:ss')}";
-        Map<String, Object> params = new HashMap<>();
-        params.put("b", "b");
-        params.put("d", "d");
-
-        String result = FreemarkerUtils.INSTANCE.render(template, params);
+        String template = "uuid()\t${uuid()}\n" +
+                "now()\t${now()}\n" +
+                "now('yyyy-MM-dd HH:mm:ss')\t${now('yyyy-MM-dd HH:mm:ss')}\n" +
+                "randomInt()\t${randomInt()}\n" +
+                "randomInt(5)\t${randomInt(5)}\n" +
+                "randomInt(2,5)\t${randomInt(2,5)}";
+        String result = FreemarkerUtils.INSTANCE.render(template, Collections.emptyMap());
         System.out.println(result);
-    }
-
-    private static class Now implements TemplateMethodModelEx {
-        @Override
-        public Object exec(List paramList) {
-            if (paramList.size() != 1) {
-                throw new RuntimeException("now函数格式: ${now('yyyy-MM-dd HH:mm:ss')}");
-            }
-            Object format = paramList.get(0);
-            if (!(format instanceof TemplateModel)) {
-                throw new RuntimeException("now函数格式: ${now('yyyy-MM-dd HH:mm:ss')}");
-            }
-            return new SimpleDateFormat(getObject(((TemplateModel) format)).toString()).format(new Date());
-        }
     }
 }
