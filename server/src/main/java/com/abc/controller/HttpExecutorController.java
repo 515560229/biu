@@ -7,6 +7,7 @@ import com.abc.vo.Json;
 import com.abc.vo.commonconfigvoproperty.HttpConfig;
 import freemarker.template.TemplateException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -44,8 +45,10 @@ public class HttpExecutorController {
         HttpHeaders httpHeaders = new HttpHeaders();
         if (CollectionUtils.isNotEmpty(headers)) {
             for (HttpConfig.Header header : headers) {
-                httpHeaders.add(resolve(header.getKey(), parameterMap),
-                        resolve(header.getValue(), parameterMap));
+                if (StringUtils.isNotBlank(header.getKey())) {
+                    httpHeaders.add(resolve(header.getKey(), parameterMap),
+                            resolve(header.getValue(), parameterMap));
+                }
             }
         }
         //处理url参数

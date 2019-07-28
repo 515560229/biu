@@ -37,7 +37,7 @@
         style="width: 100%;" ref="sqlListTable" @row-dblclick="handleRowDbClick">
         <el-table-column
           type="index"
-          width="30">
+          width="40">
         </el-table-column>
         <el-table-column align="left" width="178px">
           <template slot-scope="scope">
@@ -368,9 +368,14 @@
 
         sqlEntity.dbQueryConfig.parameters = [];//重置
         for (let idx in parameters) {
+          let label = this.getParameterLabel(oldParameters, parameters[idx]);
+          if (label === null || label === undefined || label.trim() === '') {
+            label = parameters[idx];
+          }
+
           sqlEntity.dbQueryConfig.parameters.splice(idx, 1, {
             name: parameters[idx],
-            label: this.getParameterLabel(oldParameters, parameters[idx])
+            label: label
           })
         }
       },

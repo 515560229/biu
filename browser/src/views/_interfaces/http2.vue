@@ -140,9 +140,21 @@
                   </el-button>
                 </el-tooltip>
               </el-row>
-              <el-row>
-                <template v-for="(header, idx) in temp.httpConfig.headers" v-if="temp.httpConfig.headers.length > 0">
-                  <el-col class="line" :span="6" style="text-align: left;">
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <template v-if="temp.httpConfig.method !== 'GET'">
+              <el-form-item label="请求体">
+              </el-form-item>
+            </template>
+          </el-col>
+        </el-row>
+        <el-row :gutter="24">
+          <el-col :span="12">
+            <template v-if="temp.httpConfig.headers != undefined && temp.httpConfig.headers != null && temp.httpConfig.headers.length > 0">
+              <template v-for="(header, idx) in temp.httpConfig.headers">
+                <el-row :gutter="24" style="height: 40px;line-height: 40px;">
+                  <el-col :span="5" style="text-align: left;">
                     <el-tooltip content="在当前行下面新增一行" placement="top">
                       <el-button type="primary" icon="el-icon-plus" size="mini" circle plain
                                  @click="handleAddHeader(idx)">
@@ -152,24 +164,28 @@
                                @click="handleDeleteHeader(idx)">
                     </el-button>
                   </el-col>
-                  <el-col :span="8">
-                    <el-input v-model="header.key"></el-input>
+                  <el-col :span="9">
+                    <el-autocomplete
+                      style="width: 100%;"
+                      v-model="header.key"
+                      :fetch-suggestions="headerKeySearch"
+                      placeholder="请输入内容"
+                    ></el-autocomplete>
                   </el-col>
-                  <el-col class="line" :span="2" style="text-align: center;">=</el-col>
+                  <el-col :span="1" style="text-align: center;">=</el-col>
                   <el-col :span="8">
                     <el-input v-model="header.value"></el-input>
                   </el-col>
-                </template>
-              </el-row>
-            </el-form-item>
+                </el-row>
+              </template>
+            </template>
+            <template v-else>
+              &nbsp;
+            </template>
           </el-col>
           <el-col :span="12">
-            <template v-if="temp.httpConfig.method !== 'GET'">
-              <el-form-item label="请求体">
-                <el-input v-model="temp.httpConfig.body" type="textarea" clearable
-                          :autosize='requestBodySize'></el-input>
-              </el-form-item>
-            </template>
+            <el-input v-model="temp.httpConfig.body" type="textarea" clearable
+                      :autosize='requestBodySize'></el-input>
           </el-col>
         </el-row>
         <template v-if="temp.httpConfig.parameters && temp.httpConfig.parameters.length > 0">
@@ -182,8 +198,11 @@
             <el-input v-model="parameter.label" placeholder="请输入该参数的名称"></el-input>
           </el-form-item>
         </template>
+        <template v-else>
+          &nbsp;
+        </template>
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <div slot="footer">
         <el-button @click="handleFormatRequestBody">格式化请求体</el-button>
         <el-button type="primary" @click="generateParameter()">生成参数</el-button>
         <el-button @click="dialogFormVisible = false">取消</el-button>
@@ -228,9 +247,16 @@
           {"value": 'DELETE'}
         ],
         requestBodySize: {
-          minRows: 16,
-          maxRows: 16
+          minRows: 10,
+          maxRows: 10
         },
+        //headers
+        commonHeaders: [
+          {value: "Accept"},
+          {value: "Authorization"},
+          {value: "Content-Type"},
+          {value: "SOAPAction"}
+        ],
         //tabs相关
         currentTabName: '1',
         nextTabName: '1',
@@ -301,8 +327,18 @@
     },//watch
     computed: {},
     methods: {
-      //新增
-      //数据库查询语句的相关操作
+      headerKeySearch(queryString, cb) {
+        let dataList = this.commonHeaders;
+        let results = queryString ? dataList.filter(this.createFilter(queryString)) : dataList;
+        // 调用 callback 返回建议列表的数据
+        cb(results);
+      },
+      createFilter(queryString) {
+        return (item) => {
+          return (item.value.toLowerCase().indexOf(queryString.toLowerCase()) >= 0);
+        };
+      },
+      //查询
       findHttpInterface() {
         this.httpInterfaceLoading = true;
 
@@ -468,7 +504,7 @@
         tempEntity.httpConfig.parameters = [];//重置
         for (let idx in parameters) {
           let label = this.getParameterLabel(oldParameters, parameters[idx]);
-          if (label === null || label.trim() === '') {
+          if (label === null || label === undefined || label.trim() === '') {
             label = parameters[idx];
           }
           tempEntity.httpConfig.parameters.splice(idx, 1, {
@@ -532,6 +568,15 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+  .el-form-item {
+    margin-bottom: 4px;
+  }
+  .el-dialog__body {
+    padding: 4px 20px;
+    color: #606266;
+    font-size: 14px;
+    word-break: break-all;
+  }
 </style>
 <style rel="stylesheet/scss" lang="scss">
   .el-select .el-input {
