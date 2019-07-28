@@ -268,15 +268,17 @@ export function deepClone(source) {
  * 清空对象所有属性
  * @param temp
  */
-export function resetTemp(temp) {
+export function resetTemp(temp, ignore) {
   function getDataType(data) {
     var getType = Object.prototype.toString;
     var myType = getType.call(data);//调用call方法判断类型，结果返回形如[object Function]
     return myType.slice(8, -1);//[object Function],即去除了“[object ”的字符串。
   }
 
-
   for (let prop in temp) {
+    if (ignore != undefined && ignore != null && ignore[prop] != null) {
+      continue;
+    }
     if (getDataType(temp[prop]) == "Object") {
       resetTemp(temp[prop]);
     } else {
@@ -299,7 +301,7 @@ export function isJsonString(str) {
 
 export function formatString(str) {
   //https://github.com/vkiryukhin/pretty-data
-  let pd = require('pretty-data').pd;
+  let pd = require('@/utils/format').pd;
   if (isJsonString(str)) {
     return pd.json(str);
   } else {

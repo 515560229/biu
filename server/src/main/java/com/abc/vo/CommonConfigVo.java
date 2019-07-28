@@ -5,6 +5,7 @@ import com.abc.entity.CommonConfig;
 import com.abc.vo.commonconfigvoproperty.DataBaseConfig;
 import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
 import com.abc.vo.commonconfigvoproperty.HttpConfig;
+import com.abc.vo.commonconfigvoproperty.WsConfig;
 import com.alibaba.fastjson.JSON;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,6 +22,7 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
     private DataBaseConfig dataBaseConfig;
     private DbQueryConfig dbQueryConfig;
     private HttpConfig httpConfig;
+    private WsConfig wsConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
@@ -29,6 +31,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             setDbQueryConfig(JSON.parseObject(commonConfig.getValue(), DbQueryConfig.class));
         } else if (commonConfig.getType().equals(ConfigType.HTTP_CONFIG.getValue())) {
             setHttpConfig(JSON.parseObject(commonConfig.getValue(), HttpConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.WS_CONFIG.getValue())) {
+            setWsConfig(JSON.parseObject(commonConfig.getValue(), WsConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -52,6 +56,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             commonConfig.setValue(JSON.toJSONString(getDbQueryConfig()));
         } else if (commonConfig.getType().equals(ConfigType.HTTP_CONFIG.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getHttpConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.WS_CONFIG.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getWsConfig()));
         }
         return commonConfig;
     }

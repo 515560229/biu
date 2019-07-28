@@ -193,10 +193,10 @@ export const asyncRouterMap = [
         meta: {title: 'http', icon: 'chart', noCache: false}
       },
       {
-        path: 'dubbo',
-        name: 'dubbo',
-        component: _import('_interfaces/dubbo'),
-        meta: {title: 'dubboRPC', icon: 'chart', noCache: false}
+        path: 'ws',
+        name: 'ws',
+        component: _import('_interfaces/ws'),
+        meta: {title: 'ws', icon: 'chart', noCache: false}
       }
     ]
   },

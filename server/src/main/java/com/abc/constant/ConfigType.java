@@ -4,6 +4,7 @@ public enum ConfigType {
     DB_CONFIG("db"),
     DB_QUERY_CONFIG("dbQuery"),
     HTTP_CONFIG("http"),
+    WS_CONFIG("ws"),
     ;
 
 

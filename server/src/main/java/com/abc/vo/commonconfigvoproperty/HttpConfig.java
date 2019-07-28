@@ -10,6 +10,7 @@ public class HttpConfig {
     private String method;
     private List<Header> headers;
     private String body;
+    private String operationName;//webservice时需要
     private List<Parameter> parameters;
 
     @Data
