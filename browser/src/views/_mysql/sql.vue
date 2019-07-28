@@ -249,7 +249,8 @@
     watch: {
       //延时查询
       'dbQueryNamesQuery.key': debounce(function () {
-        this.findDbQueryNames()
+        this.page1.current = 1;//搜索重置页码
+        this.findDbQueryNames();
       }, 300)
     },//watch
     computed: {},

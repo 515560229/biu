@@ -322,6 +322,7 @@
     watch: {
       //延时查询
       'httpInterfaceQuery.key': debounce(function () {
+        this.page1.current = 1;//搜索重置页码
         this.findHttpInterface()
       }, 300)
     },//watch
@@ -531,6 +532,7 @@
             if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
               this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
               this.$set(this.tableData, "loading" + idx, false);
+              this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
               return;
             }
           }
