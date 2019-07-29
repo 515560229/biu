@@ -1,8 +1,8 @@
-db: biu
+db: tester01
 server:
   port: 8888
   servlet:
-    context-path: /api/v1
+    context-path: /
     session:
       cookie:
         name: BIUSID
@@ -15,9 +15,9 @@ spring:
     port: 6379
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/${db}?characterEncoding=UTF-8&useSSL=false
-    username: root
-    password:
+    url: jdbc:mysql://10.202.4.58:3306/${db}?characterEncoding=UTF-8&useSSL=false
+    username: tester01
+    password: tester01
 logging:
   path: ./logs
   level:
