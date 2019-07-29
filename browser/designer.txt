@@ -2,6 +2,10 @@
 
 MySQL
   数据源    增删改查
-  SQL管理   增
-  SQL执行
+  SQL
+接口调用
+  http
+  ws
+Kafka
+  主题  //https://amazon10.iteye.com/blog/2377355
 
