@@ -503,8 +503,6 @@
         }
       },
       executeData(idx, row) {
-        let format = require('xml-formatter');
-
         this.$set(this.tableData, "loading" + idx, true);
         //展开
         this.$refs['sqlListTable'].toggleRowExpansion(row, true);
@@ -522,13 +520,8 @@
         httpApi.execute(row).then(res => {
           let data = res.data.data;
 
-          if (isJsonString(data.request.body)) {
-            data.request.body = pd.json(data.request.body);
-            data.response.body = pd.json(data.response.body);
-          } else {
-            data.request.body = pd.xml(data.request.body);
-            data.response.body = pd.xml(data.response.body);
-          }
+          data.request.body = formatString(data.request.body);
+          data.response.body = formatString(data.response.body);
 
           this.$set(this.tableData, "data" + idx, data);
           this.$set(this.tableData, "loading" + idx, false);

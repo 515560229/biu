@@ -174,6 +174,7 @@
       }
     },
     mounted() {
+      this.fetchData()
     },
     destroyed() {
     },
