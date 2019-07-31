@@ -395,6 +395,8 @@
           for (let i in _parameters) {
             if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
               this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
+              this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+              this.$set(this.tableData, "loading" + idx, false);
               return;
             }
           }
@@ -421,9 +423,9 @@
           this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         }).catch(e => {
           console.log(e);
-          this.$set(this.tableData, "loading" + idx, false);
           //设置当前标签页的loading
           this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+          this.$set(this.tableData, "loading" + idx, false);
           //当前标签页数据置空
           this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {});
         });

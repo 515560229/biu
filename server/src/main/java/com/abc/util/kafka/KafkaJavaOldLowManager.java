@@ -1,6 +1,5 @@
 package com.abc.util.kafka;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -17,9 +16,6 @@ import lombok.Setter;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -30,16 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
-@Configuration
-@ConfigurationProperties(prefix = "kafka08")
-public class Kafka08Manager {
-    private static final Logger LOG = LoggerFactory.getLogger(Kafka08Manager.class);
+// 老版 低阶 API 无法消费高版本的broker 1.1.0的
+public class KafkaJavaOldLowManager {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaJavaOldLowManager.class);
 
-    private static final int DEFAULT_KAFKA_TIMEOUT_VALUE = 1000 * 60;
-    private static final int BUFFER_SIZE = 100000;
-    private static final String CLIENT_ID = "__biu-client__";
-
-    private KafkaAPI kafkaAPI = new KafkaOldAPI();
+    @Getter
+    private final KafkaAPI kafkaAPI = new KafkaOldAPI();
 
     @Setter
     @Getter
@@ -49,15 +41,7 @@ public class Kafka08Manager {
 
     @PostConstruct
     public void init() {
-        List<KafkaConfig.Config> clusterConfigList = kafkaConfig.getClusterConfigList();
-        if (CollectionUtils.isNotEmpty(clusterConfigList)) {
-            for (KafkaConfig.Config config : clusterConfigList) {
-                initBySingleCluster(config);
-            }
-        }
-
-        LOG.info("topic:" + JSON.toJSONString(kafkaAPI.getFilteredTopics(clusterConfigList.get(0).getClusterName(),
-                Collections.emptyList(), Collections.emptyList())));
+        kafkaAPI.init(kafkaConfig);
     }
 
     @PreDestroy
@@ -68,42 +52,14 @@ public class Kafka08Manager {
         }
     }
 
-    private void initBySingleCluster(KafkaConfig.Config config) {
-        List<String> brokerList = config.getBrokerList();
-        for (String broker : brokerList) {
-            try {
-                consumerMap.put(config.getClusterName(), createSimpleConsumer(broker));
-                LOG.info("cluster {} init success. brokerList: {}", config.getClusterName(), config.getBrokerList());
-                //有一个成功, 则初始化下一个集群
-                break;
-            } catch (Exception ex) {
-                LOG.warn("broker connect fail. {}", broker, ex);
-            }
+    public static abstract class KafkaAPI implements Closeable {
+        protected abstract void init(KafkaConfig kafkaConfig);
 
-        }
-    }
-
-    private SimpleConsumer createSimpleConsumer(String broker) {
-        List<String> hostPort = Splitter.on(':').trimResults().omitEmptyStrings().splitToList(broker);
-        return createSimpleConsumer(hostPort.get(0), Integer.parseInt(hostPort.get(1)));
-    }
-
-    private SimpleConsumer createSimpleConsumer(HostAndPort hostAndPort) {
-        return new SimpleConsumer(hostAndPort.getHost(), hostAndPort.getPort(), DEFAULT_KAFKA_TIMEOUT_VALUE, BUFFER_SIZE,
-                CLIENT_ID);
-    }
-
-    private SimpleConsumer createSimpleConsumer(String host, int port) {
-        return new SimpleConsumer(host, port, DEFAULT_KAFKA_TIMEOUT_VALUE, BUFFER_SIZE,
-                CLIENT_ID);
-    }
-
-    private abstract class KafkaAPI implements Closeable {
         protected abstract List<KafkaTopic> getFilteredTopics(String cluster, List<Pattern> blacklist, List<Pattern> whitelist);
 
-        protected abstract long getEarliestOffset(String cluster, KafkaPartition partition) throws KafkaOffsetRetrievalFailureException;
+        protected abstract long getEarliestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException;
 
-        protected abstract long getLatestOffset(String cluster, KafkaPartition partition) throws KafkaOffsetRetrievalFailureException;
+        protected abstract long getLatestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException;
 
         protected abstract Iterator<MessageAndOffset> fetchNextMessageBuffer(String cluster, KafkaPartition partition, long nextOffset,
                                                                              long maxOffset);
@@ -112,16 +68,43 @@ public class Kafka08Manager {
     /**
      * Wrapper for the old low-level Scala-based Kafka API.
      */
-    private class KafkaOldAPI extends KafkaAPI {
+    public static class KafkaOldAPI extends KafkaAPI {
         private static final int DEFAULT_KAFKA_TIMEOUT_VALUE = 30000;
-        private static final int DEFAULT_KAFKA_BUFFER_SIZE = 1024 * 1024;
-        private static final String DEFAULT_KAFKA_CLIENT_NAME = "kafka-old-api";
-        private static final int DEFAULT_KAFKA_FETCH_REQUEST_CORRELATION_ID = -1;
+        private static final int DEFAULT_KAFKA_BUFFER_SIZE = 1024 * 1024 * 1024;
+        private static final String DEFAULT_KAFKA_CLIENT_NAME = "__biu-client__";
+        private static final int DEFAULT_KAFKA_FETCH_REQUEST_CORRELATION_ID = 11;//-1
         private static final int DEFAULT_KAFKA_FETCH_REQUEST_MIN_BYTES = 1024;
         private static final int NUM_TRIES_FETCH_TOPIC = 3;
         private static final int NUM_TRIES_FETCH_OFFSET = 3;
 
         private final ConcurrentMap<String, SimpleConsumer> activeConsumers = Maps.newConcurrentMap();
+
+        @Override
+        protected void init(KafkaConfig kafkaConfig) {
+            if (kafkaConfig != null) {
+                List<KafkaConfig.Config> clusterConfigList = kafkaConfig.getClusterConfigList();
+                if (CollectionUtils.isNotEmpty(clusterConfigList)) {
+                    for (KafkaConfig.Config config : clusterConfigList) {
+                        initBySingleCluster(config);
+                    }
+                }
+            }
+        }
+
+        private void initBySingleCluster(KafkaConfig.Config config) {
+            List<String> brokerList = config.getBrokerList();
+            for (String broker : brokerList) {
+                try {
+                    consumerMap.put(config.getClusterName(), createSimpleConsumer(broker));
+                    LOG.info("cluster {} init success. brokerList: {}", config.getClusterName(), config.getBrokerList());
+                    //有一个成功, 则初始化下一个集群
+                    break;
+                } catch (Exception ex) {
+                    LOG.warn("broker connect fail. {}", broker, ex);
+                }
+
+            }
+        }
 
         @Override
         public List<KafkaTopic> getFilteredTopics(String cluster, List<Pattern> blacklist, List<Pattern> whitelist) {
@@ -184,7 +167,7 @@ public class Kafka08Manager {
         }
 
         private SimpleConsumer getConsumer(String cluster) {
-            return Kafka08Manager.consumerMap.get(cluster);
+            return KafkaJavaOldLowManager.consumerMap.get(cluster);
         }
 
         private List<TopicMetadata> fetchTopicMetadataFromBroker(String cluster, String... selectedTopics) {
@@ -213,7 +196,7 @@ public class Kafka08Manager {
         }
 
         @Override
-        protected long getEarliestOffset(String cluster, KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
+        protected long getEarliestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
             Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetRequestInfo =
                     Collections.singletonMap(new TopicAndPartition(partition.getTopicName(), partition.getId()),
                             new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.EarliestTime(), 1));
@@ -221,7 +204,7 @@ public class Kafka08Manager {
         }
 
         @Override
-        protected long getLatestOffset(String cluster, KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
+        protected long getLatestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
             Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetRequestInfo =
                     Collections.singletonMap(new TopicAndPartition(partition.getTopicName(), partition.getId()),
                             new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.LatestTime(), 1));
@@ -251,6 +234,8 @@ public class Kafka08Manager {
                             LOG.error("Caught interrupted exception between retries of getting latest offsets. " + e2);
                         }
                     }
+                } finally {
+                    consumer.close();
                 }
             }
             throw new KafkaOffsetRetrievalFailureException(
@@ -271,9 +256,8 @@ public class Kafka08Manager {
                 FetchResponse fetchResponse = getFetchResponseForFetchRequest(fetchRequest, partition);
                 return getIteratorFromFetchResponse(fetchResponse, partition);
             } catch (Exception e) {
-                LOG.warn(
-                        String.format("Fetch message buffer for partition %s has failed: %s. Will refresh topic metadata and retry",
-                                partition, e));
+                LOG.warn("Fetch message buffer for partition {} has failed. Will refresh topic metadata and retry. ",
+                                partition, e);
                 return refreshTopicMetadataAndRetryFetch(cluster, partition, fetchRequest);
             }
         }
@@ -284,9 +268,11 @@ public class Kafka08Manager {
 
             FetchResponse fetchResponse = consumer.fetch(fetchRequest);
             if (fetchResponse.hasError()) {
+                consumer.close();
                 throw new RuntimeException(
                         String.format("error code %d", fetchResponse.errorCode(partition.getTopicName(), partition.getId())));
             }
+            consumer.close();
             return fetchResponse;
         }
 
@@ -357,6 +343,21 @@ public class Kafka08Manager {
             if (numOfConsumersNotClosed > 0) {
                 throw new IOException(numOfConsumersNotClosed + " consumer(s) failed to close.");
             }
+        }
+
+        private SimpleConsumer createSimpleConsumer(String broker) {
+            List<String> hostPort = Splitter.on(':').trimResults().omitEmptyStrings().splitToList(broker);
+            return createSimpleConsumer(hostPort.get(0), Integer.parseInt(hostPort.get(1)));
+        }
+
+        private SimpleConsumer createSimpleConsumer(HostAndPort hostAndPort) {
+            return new SimpleConsumer(hostAndPort.getHost(), hostAndPort.getPort(), DEFAULT_KAFKA_TIMEOUT_VALUE, DEFAULT_KAFKA_BUFFER_SIZE,
+                    DEFAULT_KAFKA_CLIENT_NAME);
+        }
+
+        private SimpleConsumer createSimpleConsumer(String host, int port) {
+            return new SimpleConsumer(host, port, DEFAULT_KAFKA_TIMEOUT_VALUE, DEFAULT_KAFKA_BUFFER_SIZE,
+                    DEFAULT_KAFKA_CLIENT_NAME);
         }
     }
 

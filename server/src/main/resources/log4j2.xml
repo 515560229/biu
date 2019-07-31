@@ -6,9 +6,9 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="org.springframework.jdbc.core.JdbcTemplate" level="debug" additivity="false">
-            <AppenderRef ref="Console"/>
-        </Logger>
+        <Logger name="org.apache.kafka.clients" level="trace"/>
+        <Logger name="kafka.message" level="trace"/>
+        <Logger name="org.springframework.jdbc.core.JdbcTemplate" level="debug"/>
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>

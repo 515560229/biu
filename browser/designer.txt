@@ -9,3 +9,8 @@ MySQL
 Kafka
   主题  //https://amazon10.iteye.com/blog/2377355
 
+
+1. 未完成的
+  SQL接口增加时查询数据源, 最好分页
+  xml增加转义字符替换
+  首页换个标题
