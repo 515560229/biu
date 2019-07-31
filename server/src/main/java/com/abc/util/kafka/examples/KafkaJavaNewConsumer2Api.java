@@ -1,15 +1,13 @@
-package com.abc.util.kafka;
+package com.abc.util.kafka.examples;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.kafka110.clients.consumer.ConsumerConfig;
 import org.apache.kafka110.clients.consumer.ConsumerRecord;
 import org.apache.kafka110.clients.consumer.ConsumerRecords;
 import org.apache.kafka110.clients.consumer.KafkaConsumer;
-import org.apache.kafka110.common.TopicPartition;
 import org.apache.kafka110.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.parallel.immutable.ParRange;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -23,12 +21,12 @@ public class KafkaJavaNewConsumer2Api extends Thread {
 
     public KafkaJavaNewConsumer2Api() {
         consumer = createConsumer();
-        consumer.subscribe(Arrays.asList(KafkaConstants.TOPIC_11));
+        consumer.subscribe(Arrays.asList("test"));
     }
 
     private static KafkaConsumer createConsumer() {
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConstants.BOOTSTRAP_SERVER_11);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 1024 * 1024 * 5);
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.MAX_VALUE);
@@ -48,17 +46,22 @@ public class KafkaJavaNewConsumer2Api extends Thread {
     @Override
     public void run() {
         int count = 1;
+        int seconds = 1;
         while (true) {
             ConsumerRecords<byte[], byte[]> records = consumer.poll(100);
             for (ConsumerRecord<byte[], byte[]> cecord : records) {
                 try {
                     messages.add(new String(cecord.value(), "UTF-8"));
+                    Thread.sleep(1000 * 1);
                 } catch (UnsupportedEncodingException e) {
                     logger.error("encoding error.", e);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
+            seconds++;
             count += records.count();
-            if (count >= pullMaxSize) {
+            if (count >= pullMaxSize || seconds > 5) {
                 logger.info("pull break. count={}. messageSize: {}", count, messages.size());
                 consumer.close();
                 break;

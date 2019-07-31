@@ -1,4 +1,4 @@
-package com.abc.util.kafka;
+package com.abc.util.kafka.examples;
 
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
@@ -24,7 +24,7 @@ public class KafkaJavaOldHighConsumer {
         Properties originalProps = new Properties();
         //zookeeper 配置，通过zk 可以负载均衡的获取broker
         //10.203.26.176:2181/kafka/inc-sgs    10.202.24.5:2181/kafka/bus  "10.202.34.28:2182/kafka1.1.0/default"
-        originalProps.put("zookeeper.connect", KafkaConstants.ZK_8);
+        originalProps.put("zookeeper.connect", "localhost:12181");
         originalProps.put("auto.commit.enable", "false");
         originalProps.put("fetch.message.max.bytes", String.valueOf(1024 * 1024 * 10));
         //group 代表一个消费组
@@ -51,10 +51,10 @@ public class KafkaJavaOldHighConsumer {
 
     public void consume() throws InterruptedException {
         // "CIAM_PAY_RET"  a-b.c-ef.ax-d.xxxx-test18.sgs.env-1/ 这个可以消费
-        String topic = KafkaConstants.TOPIC_8;
+        String topic = "test";
         //指定需要订阅的topic
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(topic, new Integer(32));//线程数
+        topicCountMap.put(topic, new Integer(1));//线程数
         //指定key的编码格式
         Decoder<String> keyDecoder = new kafka.serializer.StringDecoder(new VerifiableProperties());
         //指定value的编码格式

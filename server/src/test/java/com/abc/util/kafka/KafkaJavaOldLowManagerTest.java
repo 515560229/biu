@@ -1,5 +1,8 @@
 package com.abc.util.kafka;
 
+import com.abc.util.kafka.examples.KafkaConfig;
+import com.abc.util.kafka.examples.KafkaJavaOldLowManager;
+import com.abc.util.kafka.examples.KafkaOffsetRetrievalFailureException;
 import com.alibaba.fastjson.JSON;
 import kafka.message.MessageAndOffset;
 import org.junit.Test;

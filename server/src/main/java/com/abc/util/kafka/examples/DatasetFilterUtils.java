@@ -1,4 +1,4 @@
-package com.abc.util.kafka;
+package com.abc.util.kafka.examples;
 
 import java.util.List;
 import java.util.regex.Pattern;

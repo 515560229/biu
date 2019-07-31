@@ -1,5 +1,10 @@
 package com.abc.util.kafka;
 
+import com.abc.util.kafka.examples.DatasetFilterUtils;
+import com.abc.util.kafka.examples.KafkaOffsetRetrievalFailureException;
+import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -12,49 +17,32 @@ import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 // 老版 低阶 API 无法消费高版本的broker 1.1.0的
-public class KafkaJavaOldLowManager {
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaJavaOldLowManager.class);
+public class KafkaTopicFetcher {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaTopicFetcher.class);
 
     @Getter
     private final KafkaAPI kafkaAPI = new KafkaOldAPI();
 
-    @Setter
-    @Getter
-    private KafkaConfig kafkaConfig;
-
-    private static final Map<String, SimpleConsumer> consumerMap = new ConcurrentHashMap<>();
-
     @PostConstruct
-    public void init() {
-        kafkaAPI.init(kafkaConfig);
-    }
+    public List<KafkaTopic> fetch(KafkaClusterConfig clusterConfig) {
+        List<Pattern> blackPatterns = new ArrayList<>();
+        blackPatterns.add(Pattern.compile("__consumer_offsets"));
 
-    @PreDestroy
-    public void destroy() {
-        for (Map.Entry<String, SimpleConsumer> entry : consumerMap.entrySet()) {
-            entry.getValue().close();
-            LOG.info("cluster [{}] closed", entry.getKey());
-        }
+        return kafkaAPI.getFilteredTopics(clusterConfig.getBroker(), blackPatterns, Collections.emptyList());
     }
 
     public static abstract class KafkaAPI implements Closeable {
-        protected abstract void init(KafkaConfig kafkaConfig);
-
         protected abstract List<KafkaTopic> getFilteredTopics(String cluster, List<Pattern> blacklist, List<Pattern> whitelist);
 
         protected abstract long getEarliestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException;
@@ -78,33 +66,6 @@ public class KafkaJavaOldLowManager {
         private static final int NUM_TRIES_FETCH_OFFSET = 3;
 
         private final ConcurrentMap<String, SimpleConsumer> activeConsumers = Maps.newConcurrentMap();
-
-        @Override
-        protected void init(KafkaConfig kafkaConfig) {
-            if (kafkaConfig != null) {
-                List<KafkaConfig.Config> clusterConfigList = kafkaConfig.getClusterConfigList();
-                if (CollectionUtils.isNotEmpty(clusterConfigList)) {
-                    for (KafkaConfig.Config config : clusterConfigList) {
-                        initBySingleCluster(config);
-                    }
-                }
-            }
-        }
-
-        private void initBySingleCluster(KafkaConfig.Config config) {
-            List<String> brokerList = config.getBrokerList();
-            for (String broker : brokerList) {
-                try {
-                    consumerMap.put(config.getClusterName(), createSimpleConsumer(broker));
-                    LOG.info("cluster {} init success. brokerList: {}", config.getClusterName(), config.getBrokerList());
-                    //有一个成功, 则初始化下一个集群
-                    break;
-                } catch (Exception ex) {
-                    LOG.warn("broker connect fail. {}", broker, ex);
-                }
-
-            }
-        }
 
         @Override
         public List<KafkaTopic> getFilteredTopics(String cluster, List<Pattern> blacklist, List<Pattern> whitelist) {
@@ -166,20 +127,16 @@ public class KafkaJavaOldLowManager {
             return filteredTopicMetadataList;
         }
 
-        private SimpleConsumer getConsumer(String cluster) {
-            return KafkaJavaOldLowManager.consumerMap.get(cluster);
-        }
-
-        private List<TopicMetadata> fetchTopicMetadataFromBroker(String cluster, String... selectedTopics) {
-            LOG.info(String.format("Fetching topic metadata from cluster %s", cluster));
+        private List<TopicMetadata> fetchTopicMetadataFromBroker(String broker, String... selectedTopics) {
+            LOG.info(String.format("Fetching topic metadata from cluster %s", broker));
             SimpleConsumer consumer = null;
             try {
-                consumer = getConsumer(cluster);
+                consumer = createSimpleConsumer(broker);
                 for (int i = 0; i < NUM_TRIES_FETCH_TOPIC; i++) {
                     try {
                         return consumer.send(new TopicMetadataRequest(Arrays.asList(selectedTopics))).topicsMetadata();
                     } catch (Exception e) {
-                        LOG.warn(String.format("Fetching topic metadata from cluster %s has failed %d times.", cluster, i + 1), e);
+                        LOG.warn(String.format("Fetching topic metadata from cluster %s has failed %d times.", broker, i + 1), e);
                         try {
                             Thread.sleep((long) ((i + Math.random()) * 1000));
                         } catch (InterruptedException e2) {
@@ -359,6 +316,14 @@ public class KafkaJavaOldLowManager {
             return new SimpleConsumer(host, port, DEFAULT_KAFKA_TIMEOUT_VALUE, DEFAULT_KAFKA_BUFFER_SIZE,
                     DEFAULT_KAFKA_CLIENT_NAME);
         }
+    }
+
+    public static void main(String[] args) {
+        KafkaTopicFetcher fetcher = new KafkaTopicFetcher();
+        KafkaClusterConfig clusterConfig = new KafkaClusterConfig();
+        clusterConfig.setBroker("localhost:19092");
+        List<KafkaTopic> kafkaTopics = fetcher.fetch(clusterConfig);
+        System.out.println(JSON.toJSONString(kafkaTopics, SerializerFeature.PrettyFormat));
     }
 
 }
