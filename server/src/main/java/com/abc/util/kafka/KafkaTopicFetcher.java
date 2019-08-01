@@ -1,7 +1,6 @@
 package com.abc.util.kafka;
 
 import com.abc.util.kafka.examples.DatasetFilterUtils;
-import com.abc.util.kafka.examples.KafkaOffsetRetrievalFailureException;
 import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -321,9 +320,11 @@ public class KafkaTopicFetcher {
     public static void main(String[] args) {
         KafkaTopicFetcher fetcher = new KafkaTopicFetcher();
         KafkaClusterConfig clusterConfig = new KafkaClusterConfig();
-        clusterConfig.setBroker("localhost:19092");
+        clusterConfig.setBroker("10.202.24.5:9096");
         List<KafkaTopic> kafkaTopics = fetcher.fetch(clusterConfig);
+
         System.out.println(JSON.toJSONString(kafkaTopics, SerializerFeature.PrettyFormat));
+        System.out.println(kafkaTopics.size());
     }
 
 }

@@ -10,6 +10,7 @@ import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.MessageAndMetadata;
 import kafka.serializer.Decoder;
 import kafka.utils.VerifiableProperties;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,18 +22,21 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Kafka08Consumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka08Consumer.class);
     private static final String GROUP_ID = "__BIU__";
     private static final int consumeHandleThreads = 2;
     private static final int WAIT_MAX_SECONDS = 30;
-    private static final int MAX_MESSAGE_COUNT = 200;
+    private static final int MAX_MESSAGE_COUNT = 10;
     private final ConsumerConnector consumer;
     private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
     private KafkaTopicConfig clusterConfig;
     private long start;
     private long cost;
+    @Getter
+    private AtomicLong fetchCount = new AtomicLong(0);
 
     public Kafka08Consumer(KafkaTopicConfig clusterConfig) throws InterruptedException {
         this.clusterConfig = clusterConfig;
@@ -89,6 +93,10 @@ public class Kafka08Consumer {
                     {
                         ConsumerIterator<String, String> iterator = kafkaStream.iterator();
                         while (iterator.hasNext()) {
+                            fetchCount.incrementAndGet();
+                            if (messages.size() > MAX_MESSAGE_COUNT) {
+                                break;
+                            }
                             MessageAndMetadata<String, String> messageAndMetadata = iterator.next();
                             if (match(messageAndMetadata.message())) {
                                 messages.put(String.format("%s-%s", messageAndMetadata.partition(), messageAndMetadata.offset()),
@@ -100,7 +108,9 @@ public class Kafka08Consumer {
         }
         int waitSeconds = 1;
         while (true) {
-            if (messages.size() >= MAX_MESSAGE_COUNT || waitSeconds > WAIT_MAX_SECONDS) {
+            int messageSize = messages.size();
+            if (messageSize >= MAX_MESSAGE_COUNT || waitSeconds > WAIT_MAX_SECONDS) {
+                logger.info("fetch break. messageSize:{}, waitSeconds: {}", messageSize, waitSeconds);
                 break;
             }
             waitSeconds++;
@@ -130,12 +140,13 @@ public class Kafka08Consumer {
 
     public static void main(String[] args) throws InterruptedException {
         KafkaTopicConfig kafkaTopicConfig = new KafkaTopicConfig();
-        kafkaTopicConfig.setZkConnect("localhost:12181");
-        kafkaTopicConfig.setClusterName("test");
-        kafkaTopicConfig.setTopic("test");
+        kafkaTopicConfig.setZkConnect("10.202.24.5:2181/kafka/bus");
+        kafkaTopicConfig.setClusterName("bus");
+        kafkaTopicConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
+        kafkaTopicConfig.setKeyword("12201072216241391802552201");
         Kafka08Consumer kafka08Consumer = new Kafka08Consumer(kafkaTopicConfig);
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
-        logger.info("cost: {}, messages: {}", kafka08Consumer.getCost(), JSON.toJSONString(messages));
+        logger.info("fetchCount: {} cost: {}, messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getCost(), JSON.toJSONString(messages));
     }
 
 }

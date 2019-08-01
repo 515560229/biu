@@ -21,12 +21,12 @@ public class KafkaJavaNewConsumer2Api extends Thread {
 
     public KafkaJavaNewConsumer2Api() {
         consumer = createConsumer();
-        consumer.subscribe(Arrays.asList("test"));
+        consumer.subscribe(Arrays.asList("DELIVERY.SGS.ORDER.STATUS.UPLOAD.SGS-KAFKA-GW.ENV3-2"));
     }
 
     private static KafkaConsumer createConsumer() {
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "inc-sgs-kafka-01.intsit.sfdc.com.cn:9092");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 1024 * 1024 * 5);
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.MAX_VALUE);
@@ -52,11 +52,8 @@ public class KafkaJavaNewConsumer2Api extends Thread {
             for (ConsumerRecord<byte[], byte[]> cecord : records) {
                 try {
                     messages.add(new String(cecord.value(), "UTF-8"));
-                    Thread.sleep(1000 * 1);
                 } catch (UnsupportedEncodingException e) {
                     logger.error("encoding error.", e);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
             seconds++;

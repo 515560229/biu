@@ -1,4 +1,4 @@
-package com.abc.util.kafka.examples;
+package com.abc.util.kafka;
 
 @SuppressWarnings("serial")
 public class KafkaOffsetRetrievalFailureException extends Exception {
