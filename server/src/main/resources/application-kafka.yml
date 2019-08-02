@@ -1,3 +1,0 @@
-kafka08:
-    kafkaConfig:
-        cluster: {      local: 'localhost:9092'    }

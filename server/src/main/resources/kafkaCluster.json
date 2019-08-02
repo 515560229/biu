@@ -1,0 +1,12 @@
+[
+  {
+    "broker": "inc-sgs-kafka-01.intsit.sfdc.com.cn:9092",
+    "version": "1.1",
+    "clusterName": "exp08"
+  },
+  {
+    "broker": "10.202.24.5:9096",
+    "version": "0.8",
+    "clusterName": "sit-bus"
+  }
+]

@@ -1,13 +1,18 @@
 package com.abc.util.kafka;
 
 import com.google.common.collect.Lists;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Collections;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
 public final class KafkaTopic {
-  private final String name;
-  private final List<KafkaPartition> partitions;
+  private String name;
+  private List<KafkaPartition> partitions;
+  private String version;
 
   public KafkaTopic(String name, List<KafkaPartition> partitions) {
     this.name = name;

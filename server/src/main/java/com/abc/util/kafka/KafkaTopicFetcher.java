@@ -18,8 +18,8 @@ import kafka.message.MessageAndOffset;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
@@ -27,13 +27,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 // 老版 低阶 API 无法消费高版本的broker 1.1.0的
+@Component
 public class KafkaTopicFetcher {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTopicFetcher.class);
 
     @Getter
     private final KafkaAPI kafkaAPI = new KafkaOldAPI();
 
-    @PostConstruct
     public List<KafkaTopic> fetch(KafkaClusterConfig clusterConfig) {
         List<Pattern> blackPatterns = new ArrayList<>();
         blackPatterns.add(Pattern.compile("__consumer_offsets"));

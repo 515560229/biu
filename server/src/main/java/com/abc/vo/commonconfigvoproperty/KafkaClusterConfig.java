@@ -1,8 +1,10 @@
 package com.abc.vo.commonconfigvoproperty;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class KafkaClusterConfig {
     public static final String VERSION_0_8 = "0.8";
     public static final String VERSION_1_1 = "1.1";
