@@ -351,7 +351,7 @@
           this.$message.info("已取消删除")
         });
       },
-      getParameterLabel(arr, parameterName) {
+      getParameter(arr, parameterName) {
         if (!arr) {
           return '';
         }
@@ -369,7 +369,7 @@
 
         sqlEntity.dbQueryConfig.parameters = [];//重置
         for (let idx in parameters) {
-          let label = this.getParameterLabel(oldParameters, parameters[idx]);
+          let label = this.getParameter(oldParameters, parameters[idx]);
           if (label === null || label === undefined || label.trim() === '') {
             label = parameters[idx];
           }

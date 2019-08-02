@@ -145,6 +145,12 @@
           <el-col :span="12">
             <template v-if="temp.httpConfig.method !== 'GET'">
               <el-form-item label="请求体">
+                <el-row>
+                  <el-tooltip content="格式化" placement="top">
+                    <el-button type="primary" icon="el-icon-magic-stick" size="mini" circle plain @click="handleFormatRequestBody">
+                    </el-button>
+                  </el-tooltip>
+                </el-row>
               </el-form-item>
             </template>
           </el-col>
@@ -195,7 +201,10 @@
           </el-row>
           <el-form-item :label="parameter.name" v-for="(parameter,index) in temp.httpConfig.parameters"
                         :key="'param_' + index">
-            <el-input v-model="parameter.label" placeholder="请输入该参数的名称"></el-input>
+            <el-input v-model="parameter.label" placeholder="请输入该参数的名称">
+              <el-input style="width: 450px;" size="small" v-model="parameter.defaultValue" slot="append" placeholder="默认值. 在列表页面展示时,将默认填充值.">
+              </el-input>
+            </el-input>
           </el-form-item>
         </template>
         <template v-else>
@@ -203,7 +212,6 @@
         </template>
       </el-form>
       <div slot="footer">
-        <el-button @click="handleFormatRequestBody">格式化请求体</el-button>
         <el-button type="primary" @click="generateParameter()">生成参数</el-button>
         <el-button @click="dialogFormVisible = false">取消</el-button>
         <el-button v-if="dialogStatus==='create'" type="primary" @click="createData">创建</el-button>
@@ -438,7 +446,7 @@
           if (!valid) {
             return;
           }
-          let tempData = Object.assign({}, this.temp)//copy obj
+          let tempData = this.temp//copy obj
           tempData.type = this.type;
           commonConfigApi.updateCommonConfig(tempData).then((res) => {
             this.dialogFormVisible = false;
@@ -457,13 +465,13 @@
           this.$message.info("已取消删除")
         });
       },
-      getParameterLabel(arr, parameterName) {
+      getParameter(arr, parameterName) {
         if (!arr) {
-          return '';
+          return null;
         }
         for (let i = 0; i < arr.length; i++) {
           if (parameterName === arr[i].name) {
-            return arr[i].label;
+            return arr[i];
           }
         }
       },
@@ -501,17 +509,30 @@
         }
 
         let oldParameters = tempEntity.httpConfig.parameters;
-
         tempEntity.httpConfig.parameters = [];//重置
+        //参数去重
+        let tempObj = {};
+
         for (let idx in parameters) {
-          let label = this.getParameterLabel(oldParameters, parameters[idx]);
-          if (label === null || label === undefined || label.trim() === '') {
-            label = parameters[idx];
+          if (tempObj[parameters[idx]]) {
+            continue;//参数重复了
           }
-          tempEntity.httpConfig.parameters.splice(idx, 1, {
-            name: parameters[idx],
-            label: label
-          });
+          tempObj[parameters[idx]] = 1;
+          //重置后, 默认获取原有的参数信息
+          let oldParameter = this.getParameter(oldParameters, parameters[idx]);
+          if (oldParameter === null || oldParameter === undefined) {
+            //新的参数,则默认处理
+            tempEntity.httpConfig.parameters.splice(idx, 1, {
+              name: parameters[idx],
+              label: parameters[idx]
+            });
+          } else {
+            tempEntity.httpConfig.parameters.splice(idx, 1, {
+              name: parameters[idx],
+              label: oldParameter.label,
+              defaultValue: oldParameter.defaultValue
+            });
+          }
         }
       },
       executeData(idx, row) {

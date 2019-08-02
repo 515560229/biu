@@ -86,6 +86,8 @@ dependencies {
     compile 'com.alibaba:fastjson:1.2.47'
     compile 'org.apache.commons:commons-lang3'
 
+    compile 'com.squareup.okhttp3:okhttp:4.0.1'
+
     compile 'org.freemarker:freemarker:2.3.22'
     //soap client
 //    compile group: 'wsdl4j', name: 'wsdl4j', version: '1.6.3'

@@ -302,7 +302,7 @@
           this.$message.info("已取消删除")
         });
       },
-      getParameterLabel(arr, parameterName) {
+      getParameter(arr, parameterName) {
         if (!arr) {
           return '';
         }
@@ -322,7 +322,7 @@
         for (let idx in parameters) {
           sqlEntity.dbQueryConfig.parameters.splice(idx, 1, {
             name: parameters[idx],
-            label: this.getParameterLabel(oldParameters, parameters[idx])
+            label: this.getParameter(oldParameters, parameters[idx])
           })
         }
       },

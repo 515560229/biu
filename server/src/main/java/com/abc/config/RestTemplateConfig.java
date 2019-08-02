@@ -4,11 +4,14 @@ import com.abc.util.http.LoggingClientHttpRequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -17,7 +20,7 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(new SimpleClientHttpRequestFactory()));
+        RestTemplate restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(new OkHttp3ClientHttpRequestFactory()));
         restTemplate.getInterceptors().add(new LoggingClientHttpRequestInterceptor());
 
         List<HttpMessageConverter<?>> list = restTemplate.getMessageConverters();
@@ -27,6 +30,17 @@ public class RestTemplateConfig {
                 break;
             }
         }
+
+        restTemplate.setErrorHandler(new NoOpResponseErrorHandler());
+
         return restTemplate;
+    }
+
+    private static class NoOpResponseErrorHandler extends DefaultResponseErrorHandler {
+        @Override
+        public void handleError(ClientHttpResponse response) throws IOException {
+            //do nothing
+        }
+
     }
 }
