@@ -1,10 +1,14 @@
 package com.abc.util.kafka;
 
 import com.google.common.net.HostAndPort;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public final class KafkaPartition {
-  private final int id;
-  private final String topicName;
+  private int id;
+  private String topicName;
   private KafkaLeader leader;
 
   public static class Builder {
@@ -46,7 +50,7 @@ public final class KafkaPartition {
   public KafkaPartition(KafkaPartition other) {
     this.topicName = other.topicName;
     this.id = other.id;
-    this.leader = new KafkaLeader(other.leader.id, other.leader.hostAndPort);
+    this.leader = new KafkaLeader(other.leader.id, other.leader.geetHostAndPort());
   }
 
   private KafkaPartition(Builder builder) {
@@ -55,70 +59,25 @@ public final class KafkaPartition {
     this.leader = new KafkaLeader(builder.leaderId, builder.leaderHostAndPort);
   }
 
-  public KafkaLeader getLeader() {
-    return leader;
-  }
-
-  public String getTopicName() {
-    return this.topicName;
-  }
-
-  public int getId() {
-    return this.id;
-  }
-
-  public void setLeader(int leaderId, String leaderHost, int leaderPort) {
+  public void setLeaderByPameters(int leaderId, String leaderHost, int leaderPort) {
     this.leader = new KafkaLeader(leaderId, HostAndPort.fromParts(leaderHost, leaderPort));
   }
 
-  @Override
-  public String toString() {
-    return this.getTopicName() + ":" + this.getId();
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + id;
-    result = prime * result + ((topicName == null) ? 0 : topicName.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (!(obj instanceof KafkaPartition)) {
-      return false;
-    }
-    KafkaPartition other = (KafkaPartition) obj;
-    if (id != other.id) {
-      return false;
-    }
-    if (topicName == null) {
-      if (other.topicName != null) {
-        return false;
-      }
-    } else if (!topicName.equals(other.topicName)) {
-      return false;
-    }
-    return true;
-  }
-
+  @Data
+  @NoArgsConstructor
   public final static class KafkaLeader {
-    private final int id;
-    private final HostAndPort hostAndPort;
-
-    public int getId() {
-      return this.id;
-    }
-
-    public HostAndPort getHostAndPort() {
-      return this.hostAndPort;
-    }
+    private int id;
+    private String host;
+    private int port;
 
     public KafkaLeader(int id, HostAndPort hostAndPort) {
       this.id = id;
-      this.hostAndPort = hostAndPort;
+      this.host = hostAndPort.getHost();
+      this.port = hostAndPort.getPort();
+    }
+
+    public HostAndPort geetHostAndPort() {
+      return HostAndPort.fromString(String.format("%s:%S", host, port));
     }
   }
 

@@ -1,6 +1,6 @@
 package com.abc.util.kafka;
 
-import com.abc.vo.commonconfigvoproperty.KafkaTopicConfig;
+import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class Kafka11Consumer {
     private static final int WAIT_MAX_SECONDS = 30;
     private static final int MAX_MESSAGE_COUNT = 200;
     private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaTopicConfig clusterConfig;
+    private KafkaConsumerConfig clusterConfig;
     private long start;
     private long cost;
     private final KafkaConsumer<byte[], byte[]> kafkaConsumer;
@@ -37,7 +37,7 @@ public class Kafka11Consumer {
     @Getter
     private AtomicLong totalCount = new AtomicLong(0);
 
-    public Kafka11Consumer(KafkaTopicConfig clusterConfig) {
+    public Kafka11Consumer(KafkaConsumerConfig clusterConfig) {
         this.clusterConfig = clusterConfig;
         start = System.currentTimeMillis();
         //构建properties
@@ -118,7 +118,7 @@ public class Kafka11Consumer {
             kafkaConsumer.assign(topicPartitions);
             kafkaConsumer.seekToBeginning(topicPartitions);
 
-            ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(10000);
+            ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(500);
 
             logger.info("fetch times: {}. count: {}", fetchCount.get(), records.count());
             for (ConsumerRecord<byte[], byte[]> record : records) {
@@ -126,7 +126,7 @@ public class Kafka11Consumer {
                 String message = toString(record.value());
                 if (match(message)) {
                     messages.put(getMessageKey(record.partition(), record.offset()),
-                            new KafkaMessage(toString(record.key()), message, headers(record.headers())));
+                            new KafkaMessage(record.partition(), record.offset(), toString(record.key()), message, headers(record.headers())));
                 }
             }
             if (messages.size() >= MAX_MESSAGE_COUNT || records.isEmpty() || (System.currentTimeMillis() - start) > WAIT_MAX_SECONDS * 1000) {
@@ -146,17 +146,17 @@ public class Kafka11Consumer {
     }
 
     public static void main(String[] args) {
-        KafkaTopicConfig kafkaTopicConfig = new KafkaTopicConfig();
-        kafkaTopicConfig.setBroker("inc-sgs-kafka-01.intsit.sfdc.com.cn:9092," +
+        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
+        kafkaConsumerConfig.setBroker("inc-sgs-kafka-01.intsit.sfdc.com.cn:9092," +
                 "inc-sgs-kafka-02.intsit.sfdc.com.cn:9092," +
                 "inc-sgs-kafka-03.intsit.sfdc.com.cn:9092," +
                 "inc-sgs-kafka-04.intsit.sfdc.com.cn:9092," +
                 "inc-sgs-kafka-05.intsit.sfdc.com.cn:9092");
-        kafkaTopicConfig.setClusterName("testCluster");
+        kafkaConsumerConfig.setClusterName("testCluster");
         // DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2
         // DIS.DELIVERY.ORDER.PIS.OMPS.TIME.SGS-KAFKA-GW.ENV3-2
-        kafkaTopicConfig.setTopic("DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2");
-        Kafka11Consumer consumer = new Kafka11Consumer(kafkaTopicConfig);
+        kafkaConsumerConfig.setTopic("DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2");
+        Kafka11Consumer consumer = new Kafka11Consumer(kafkaConsumerConfig);
         Map<String, KafkaMessage> messages = consumer.getMessages();
         logger.info("cost: {}, messages: {}", consumer.getCost(), JSON.toJSONString(messages));
         logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.fetchCount.get(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));

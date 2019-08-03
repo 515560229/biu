@@ -16,7 +16,7 @@ public class CommonConfig implements Serializable {
     private String type;
 
     private String value;
-    private String desc;
+    private String desc;//kafka消费或生产时,为主题名称, 用于搜索
     private String creator;//创建人
     private Date created;   // 创建时间
     private String modifier;//修改人

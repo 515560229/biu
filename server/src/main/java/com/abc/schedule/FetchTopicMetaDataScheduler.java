@@ -37,6 +37,17 @@ public class FetchTopicMetaDataScheduler {
     @Autowired
     private CommonConfigService commonConfigService;
 
+    public KafkaClusterConfig getByClusterName(String clusterName) {
+        if (CollectionUtils.isNotEmpty(kafkaClusterConfigList)) {
+            for (KafkaClusterConfig kafkaClusterConfig : kafkaClusterConfigList) {
+                if (kafkaClusterConfig.getClusterName().equals(clusterName)) {
+                    return kafkaClusterConfig;
+                }
+            }
+        }
+        return null;
+    }
+
     @PostConstruct
     public void init() throws IOException {
         Resource resource = new ClassPathResource("kafkaCluster.json");
@@ -50,7 +61,7 @@ public class FetchTopicMetaDataScheduler {
         return String.format("%s.%s", cluster, topicName);
     }
 
-    @Scheduled(cron = "0 0 9/4 ? * *")
+    @Scheduled(cron = "0 0 9/4 ? * *")//现在是每天9,21点执行.
 //    @Scheduled(cron = "0/30 * * * * ?")
     public void fetchTopic() {
         logger.info("fetch topic job start.");

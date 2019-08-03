@@ -200,6 +200,25 @@ export const asyncRouterMap = [
       }
     ]
   },
+  {
+    path: '/kafka',
+    component: Layout,
+    meta: {title: 'Kafka', icon: 'chart'},
+    children: [
+      {
+        path: 'consumer',
+        name: 'consumer',
+        component: _import('_kafka/consumer'),
+        meta: {title: '读取消息', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'producer',
+        name: 'producer',
+        component: _import('_kafka/producer'),
+        meta: {title: '写入消息', icon: 'chart', noCache: false}
+      }
+    ]
+  },
   /*
   {
     path: '/menu1',

@@ -522,10 +522,7 @@
           let oldParameter = this.getParameter(oldParameters, parameters[idx]);
           if (oldParameter === null || oldParameter === undefined) {
             //新的参数,则默认处理
-            tempEntity.httpConfig.parameters.splice(idx, 1, {
-              name: parameters[idx],
-              label: parameters[idx]
-            });
+            tempEntity.httpConfig.parameters.splice(idx, 1, parameters[idx]);
           } else {
             tempEntity.httpConfig.parameters.splice(idx, 1, {
               name: parameters[idx],

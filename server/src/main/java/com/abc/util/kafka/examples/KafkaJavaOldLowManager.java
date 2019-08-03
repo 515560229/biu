@@ -215,7 +215,7 @@ public class KafkaJavaOldLowManager {
         private long getOffset(KafkaPartition partition,
                                Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetRequestInfo)
                 throws KafkaOffsetRetrievalFailureException {
-            SimpleConsumer consumer = createSimpleConsumer(partition.getLeader().getHostAndPort());
+            SimpleConsumer consumer = createSimpleConsumer(partition.getLeader().geetHostAndPort());
             for (int i = 0; i < NUM_TRIES_FETCH_OFFSET; i++) {
                 try {
                     OffsetResponse offsetResponse = consumer.getOffsetsBefore(new OffsetRequest(offsetRequestInfo,
@@ -265,7 +265,7 @@ public class KafkaJavaOldLowManager {
 
         private synchronized FetchResponse getFetchResponseForFetchRequest(FetchRequest fetchRequest,
                                                                            KafkaPartition partition) {
-            SimpleConsumer consumer = createSimpleConsumer(partition.getLeader().getHostAndPort());
+            SimpleConsumer consumer = createSimpleConsumer(partition.getLeader().geetHostAndPort());
 
             FetchResponse fetchResponse = consumer.fetch(fetchRequest);
             if (fetchResponse.hasError()) {
@@ -309,7 +309,7 @@ public class KafkaJavaOldLowManager {
                 TopicMetadata topicMetadata = topicMetadataList.get(0);
                 for (PartitionMetadata partitionMetadata : topicMetadata.partitionsMetadata()) {
                     if (partitionMetadata.partitionId() == partition.getId()) {
-                        partition.setLeader(partitionMetadata.leader().id(), partitionMetadata.leader().host(),
+                        partition.setLeaderByPameters(partitionMetadata.leader().id(), partitionMetadata.leader().host(),
                                 partitionMetadata.leader().port());
                         break;
                     }

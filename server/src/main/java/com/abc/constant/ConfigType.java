@@ -6,6 +6,7 @@ public enum ConfigType {
     HTTP_CONFIG("http"),
     WS_CONFIG("ws"),
     KAFKA_TOPIC_INFO("kafka"),
+    KAFKA_TOPIC_CONSUMER_INFO("consumer"),
     ;
 
 

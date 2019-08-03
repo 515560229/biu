@@ -2,7 +2,7 @@ package com.abc.util.kafka;
 
 import com.abc.exception.MessageRuntimeException;
 import com.abc.util.kafka.examples.DatasetFilterUtils;
-import com.abc.vo.commonconfigvoproperty.KafkaTopicConfig;
+import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -43,15 +43,15 @@ public class Kafka08OldConsumer {
     private static final int NUM_TRIES_FETCH_OFFSET = 3;
     private static final long SEARCH_OFFSET_SIZE = 5000;
     private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaTopicConfig clusterConfig;
+    private KafkaConsumerConfig clusterConfig;
     private long start;
     private long cost;
     @Getter
-    private AtomicLong fetchCount = new AtomicLong(0);
+    private AtomicLong fetchCount = new AtomicLong(0);//fetch or pull count
     @Getter
-    private AtomicLong totalCount = new AtomicLong(0);
+    private AtomicLong totalCount = new AtomicLong(0);//search message count
 
-    public Kafka08OldConsumer(KafkaTopicConfig clusterConfig) {
+    public Kafka08OldConsumer(KafkaConsumerConfig clusterConfig) {
         this.clusterConfig = clusterConfig;
         start = System.currentTimeMillis();
 
@@ -68,7 +68,7 @@ public class Kafka08OldConsumer {
             final KafkaPartition kafkaPartition = kafkaTopic.getPartitions().get(i);
             executor.submit(() -> {
                 //查询offset
-                SimpleConsumer consumer = createSimpleConsumer(kafkaPartition.getLeader().getHostAndPort());
+                SimpleConsumer consumer = createSimpleConsumer(kafkaPartition.getLeader().geetHostAndPort());
                 THEAD_CONSUMER.set(consumer);
                 try {
                     long earliestOffset = getEarliestOffset(kafkaPartition);
@@ -136,7 +136,7 @@ public class Kafka08OldConsumer {
                     String message = new String(bytes, "UTF-8");
                     fetchCount.incrementAndGet();
                     if (match(message)) {
-                        messages.put(String.format("%s-%s", partition.getId(), last.offset()), new KafkaMessage(null, message, null));
+                        messages.put(String.format("%s-%s", partition.getId(), last.offset()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
                     }
                     if (last.nextOffset() >= maxOffset) {
                         break;
@@ -345,12 +345,12 @@ public class Kafka08OldConsumer {
     }
 
     public static void main(String[] args) {
-        KafkaTopicConfig kafkaTopicConfig = new KafkaTopicConfig();
-        kafkaTopicConfig.setBroker("10.202.24.5:9096");
-        kafkaTopicConfig.setClusterName("bus");
-        kafkaTopicConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
-        kafkaTopicConfig.setKeyword("03201072916045342308052719");
-        Kafka08OldConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaTopicConfig);
+        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
+        kafkaConsumerConfig.setBroker("10.202.24.5:9096");
+        kafkaConsumerConfig.setClusterName("bus");
+        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
+        kafkaConsumerConfig.setKeyword("03201072916045342308052719");
+        Kafka08OldConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
         logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getTotalCount().get(), kafka08Consumer.getCost(), messages.size(), JSON.toJSONString(messages));
     }

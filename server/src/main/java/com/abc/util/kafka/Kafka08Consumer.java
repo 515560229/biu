@@ -1,6 +1,6 @@
 package com.abc.util.kafka;
 
-import com.abc.vo.commonconfigvoproperty.KafkaTopicConfig;
+import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import com.alibaba.fastjson.JSON;
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
@@ -32,13 +32,13 @@ public class Kafka08Consumer {
     private static final int MAX_MESSAGE_COUNT = 10;
     private final ConsumerConnector consumer;
     private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaTopicConfig clusterConfig;
+    private KafkaConsumerConfig clusterConfig;
     private long start;
     private long cost;
     @Getter
     private AtomicLong fetchCount = new AtomicLong(0);
 
-    public Kafka08Consumer(KafkaTopicConfig clusterConfig) throws InterruptedException {
+    public Kafka08Consumer(KafkaConsumerConfig clusterConfig) throws InterruptedException {
         this.clusterConfig = clusterConfig;
         start = System.currentTimeMillis();
         Properties originalProps = new Properties();
@@ -100,7 +100,7 @@ public class Kafka08Consumer {
                             MessageAndMetadata<String, String> messageAndMetadata = iterator.next();
                             if (match(messageAndMetadata.message())) {
                                 messages.put(String.format("%s-%s", messageAndMetadata.partition(), messageAndMetadata.offset()),
-                                        new KafkaMessage(messageAndMetadata.key(), messageAndMetadata.message(), null));
+                                        new KafkaMessage(messageAndMetadata.partition(), messageAndMetadata.offset(), messageAndMetadata.key(), messageAndMetadata.message(), null));
                             }
                         }
                     }
@@ -139,12 +139,12 @@ public class Kafka08Consumer {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        KafkaTopicConfig kafkaTopicConfig = new KafkaTopicConfig();
-        kafkaTopicConfig.setZkConnect("10.202.24.5:2181/kafka/bus");
-        kafkaTopicConfig.setClusterName("bus");
-        kafkaTopicConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
-        kafkaTopicConfig.setKeyword("12201072216241391802552201");
-        Kafka08Consumer kafka08Consumer = new Kafka08Consumer(kafkaTopicConfig);
+        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
+        kafkaConsumerConfig.setZkConnect("10.202.24.5:2181/kafka/bus");
+        kafkaConsumerConfig.setClusterName("bus");
+        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
+        kafkaConsumerConfig.setKeyword("12201072216241391802552201");
+        Kafka08Consumer kafka08Consumer = new Kafka08Consumer(kafkaConsumerConfig);
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
         logger.info("fetchCount: {} cost: {}, messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getCost(), JSON.toJSONString(messages));
     }

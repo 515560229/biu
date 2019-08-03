@@ -2,10 +2,8 @@ package com.abc.vo;
 
 import com.abc.constant.ConfigType;
 import com.abc.entity.CommonConfig;
-import com.abc.vo.commonconfigvoproperty.DataBaseConfig;
-import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
-import com.abc.vo.commonconfigvoproperty.HttpConfig;
-import com.abc.vo.commonconfigvoproperty.WsConfig;
+import com.abc.util.kafka.KafkaTopic;
+import com.abc.vo.commonconfigvoproperty.*;
 import com.alibaba.fastjson.JSON;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,6 +21,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
     private DbQueryConfig dbQueryConfig;
     private HttpConfig httpConfig;
     private WsConfig wsConfig;
+    private KafkaTopic kafkaTopic;
+    private KafkaConsumerConfig consumerConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
@@ -33,6 +33,10 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             setHttpConfig(JSON.parseObject(commonConfig.getValue(), HttpConfig.class));
         } else if (commonConfig.getType().equals(ConfigType.WS_CONFIG.getValue())) {
             setWsConfig(JSON.parseObject(commonConfig.getValue(), WsConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_INFO.getValue())) {
+            setKafkaTopic(JSON.parseObject(commonConfig.getValue(), KafkaTopic.class));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_CONSUMER_INFO.getValue())) {
+            setConsumerConfig(JSON.parseObject(commonConfig.getValue(), KafkaConsumerConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -58,6 +62,10 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             commonConfig.setValue(JSON.toJSONString(getHttpConfig()));
         } else if (commonConfig.getType().equals(ConfigType.WS_CONFIG.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getWsConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_INFO.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getKafkaTopic()));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_CONSUMER_INFO.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getConsumerConfig()));
         }
         return commonConfig;
     }
