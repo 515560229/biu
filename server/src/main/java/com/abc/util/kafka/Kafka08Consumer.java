@@ -10,8 +10,6 @@ import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.MessageAndMetadata;
 import kafka.serializer.Decoder;
 import kafka.utils.VerifiableProperties;
-import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,27 +17,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class Kafka08Consumer {
+public class Kafka08Consumer extends KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka08Consumer.class);
-    private static final String GROUP_ID = "__BIU__";
     private static final int consumeHandleThreads = 2;
-    private static final int WAIT_MAX_SECONDS = 30;
-    private static final int MAX_MESSAGE_COUNT = 10;
     private final ConsumerConnector consumer;
-    private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaConsumerConfig clusterConfig;
-    private long start;
-    private long cost;
-    @Getter
-    private AtomicLong fetchCount = new AtomicLong(0);
 
     public Kafka08Consumer(KafkaConsumerConfig clusterConfig) throws InterruptedException {
-        this.clusterConfig = clusterConfig;
+        super(clusterConfig);
+
         start = System.currentTimeMillis();
         Properties originalProps = new Properties();
         originalProps.put("zookeeper.connect", clusterConfig.getZkConnect());
@@ -58,23 +46,12 @@ public class Kafka08Consumer {
         originalProps.put("connections.max.idle.ms", "600000");
         //构建consumer connection 对象
         consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(originalProps));
-        consume();
-    }
-
-    private boolean match(String message) {
-        if (StringUtils.isBlank(clusterConfig.getKeyword())) {
-            return true;
-        }
-        if (message.contains(clusterConfig.getKeyword())) {
-            return true;
-        }
-        return false;
     }
 
     public void consume() throws InterruptedException {
         //指定需要订阅的topic
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(clusterConfig.getTopic(), new Integer(1));//线程数
+        topicCountMap.put(kafkaConsumerConfig.getTopic(), new Integer(1));//线程数
         //指定key的编码格式
         Decoder<String> keyDecoder = new kafka.serializer.StringDecoder(new VerifiableProperties());
         //指定value的编码格式
@@ -83,7 +60,7 @@ public class Kafka08Consumer {
         Map<String, List<KafkaStream<String, String>>> map = consumer.createMessageStreams(topicCountMap, keyDecoder, valueDecoder);
 
         //根据指定的topic 获取 stream 集合
-        List<KafkaStream<String, String>> kafkaStreams = map.get(clusterConfig.getTopic());
+        List<KafkaStream<String, String>> kafkaStreams = map.get(kafkaConsumerConfig.getTopic());
         ExecutorService executor = Executors.newFixedThreadPool(consumeHandleThreads);
 
         //因为是多个 message组成 message set ， 所以要对stream 进行拆解遍历
@@ -99,7 +76,7 @@ public class Kafka08Consumer {
                             }
                             MessageAndMetadata<String, String> messageAndMetadata = iterator.next();
                             if (match(messageAndMetadata.message())) {
-                                messages.put(String.format("%s-%s", messageAndMetadata.partition(), messageAndMetadata.offset()),
+                                messages.put(getMessageKey(messageAndMetadata.partition(), messageAndMetadata.offset()),
                                         new KafkaMessage(messageAndMetadata.partition(), messageAndMetadata.offset(), messageAndMetadata.key(), messageAndMetadata.message(), null));
                             }
                         }
@@ -121,21 +98,13 @@ public class Kafka08Consumer {
         while (!executor.isTerminated()) {
             try {
                 Thread.sleep(1000 * 1);
-                logger.info("wait executor terminated for topic {} {}", clusterConfig.getClusterName(), clusterConfig.getTopic());
+                logger.info("wait executor terminated for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
             } catch (InterruptedException e) {
                 logger.error("中断失败", e);
             }
         }
         cost = System.currentTimeMillis() - start;
-        logger.info("finish and close for topic {} {}", clusterConfig.getClusterName(), clusterConfig.getTopic());
-    }
-
-    public Map<String, KafkaMessage> getMessages() {
-        return this.messages;
-    }
-
-    public long getCost() {
-        return this.cost;
+        logger.info("finish and close for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
     }
 
     public static void main(String[] args) throws InterruptedException {

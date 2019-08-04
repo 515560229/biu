@@ -27,37 +27,30 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
-public class Kafka08OldConsumer {
+public class Kafka08OldConsumer extends KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka08OldConsumer.class);
 
     private static final ThreadLocal<SimpleConsumer> THEAD_CONSUMER = new ThreadLocal<>();
 
-    private static final int WAIT_MAX_SECONDS = 30;
-    private static final int MAX_MESSAGE_COUNT = 10;
     private static final int DEFAULT_KAFKA_TIMEOUT_VALUE = 30000;
     private static final int DEFAULT_KAFKA_BUFFER_SIZE = 1024 * 1024 * 10;
-    private static final String DEFAULT_KAFKA_CLIENT_NAME = "__BIU__";
+    private static final String DEFAULT_KAFKA_CLIENT_NAME = GROUP_ID;
     private static final int DEFAULT_KAFKA_FETCH_REQUEST_CORRELATION_ID = 11;//-1
     private static final int DEFAULT_KAFKA_FETCH_REQUEST_MIN_BYTES = 1024;
     private static final int NUM_TRIES_FETCH_TOPIC = 3;
     private static final int NUM_TRIES_FETCH_OFFSET = 3;
     private static final long SEARCH_OFFSET_SIZE = 5000;
-    private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaConsumerConfig clusterConfig;
-    private long start;
-    private long cost;
-    @Getter
-    private AtomicLong fetchCount = new AtomicLong(0);//fetch or pull count
-    @Getter
-    private AtomicLong totalCount = new AtomicLong(0);//search message count
 
-    public Kafka08OldConsumer(KafkaConsumerConfig clusterConfig) {
-        this.clusterConfig = clusterConfig;
+    public Kafka08OldConsumer(KafkaConsumerConfig kafkaConsumerConfig) {
+        super(kafkaConsumerConfig);
         start = System.currentTimeMillis();
+    }
 
-        SimpleConsumer getTopicConsumer = createSimpleConsumer(clusterConfig.getBroker());
+    @Override
+    public void consume() throws InterruptedException {
+        SimpleConsumer getTopicConsumer = createSimpleConsumer(kafkaConsumerConfig.getBroker());
         THEAD_CONSUMER.set(getTopicConsumer);
-        List<KafkaTopic> topics = getFilteredTopics(clusterConfig.getBroker(), Collections.emptyList(), Arrays.asList(Pattern.compile(clusterConfig.getTopic())));
+        List<KafkaTopic> topics = getFilteredTopics(kafkaConsumerConfig.getBroker(), Collections.emptyList(), Arrays.asList(Pattern.compile(kafkaConsumerConfig.getTopic())));
         getTopicConsumer.close();
         THEAD_CONSUMER.remove();
 
@@ -74,13 +67,13 @@ public class Kafka08OldConsumer {
                     long earliestOffset = getEarliestOffset(kafkaPartition);
                     long latestOffset = getLatestOffset(kafkaPartition);
                     totalCount.addAndGet(latestOffset - earliestOffset);
-                    logger.info("fetch topic {} partition {} offset {}-{}", clusterConfig.getTopic(), kafkaPartition.getId(), earliestOffset, latestOffset);
+                    logger.info("fetch topic {} partition {} offset {}-{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), earliestOffset, latestOffset);
 
                     KafkaOffsetPage kafkaOffsetPage = new KafkaOffsetPage(earliestOffset, latestOffset, SEARCH_OFFSET_SIZE);
                     int pageIndex = 1;
                     long[] offsetRange = kafkaOffsetPage.getOffsetRange(pageIndex);
                     while (offsetRange != KafkaOffsetPage.EMPTY) {
-                        logger.info("fetch topic {} partition {} times {} offset {}-{}", clusterConfig.getTopic(), kafkaPartition.getId(), pageIndex, offsetRange[0], offsetRange[1]);
+                        logger.info("fetch topic {} partition {} times {} offset {}-{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), pageIndex, offsetRange[0], offsetRange[1]);
                         fetchNextMessageBuffer(kafkaPartition, offsetRange[0], offsetRange[1]);
                         pageIndex++;
                         //判断是否需要退出
@@ -103,13 +96,13 @@ public class Kafka08OldConsumer {
         while (!executor.isTerminated()) {
             try {
                 Thread.sleep(1000 * 1);
-                logger.info("wait executor terminated for topic {} {}", clusterConfig.getClusterName(), clusterConfig.getTopic());
+                logger.info("wait executor terminated for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
             } catch (InterruptedException e) {
                 logger.error("中断失败", e);
             }
         }
         cost = System.currentTimeMillis() - start;
-        logger.info("finish and close for topic {} {}", clusterConfig.getClusterName(), clusterConfig.getTopic());
+        logger.info("finish and close for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
     }
 
     public void fetchNextMessageBuffer(KafkaPartition partition, long minOffset,
@@ -117,16 +110,15 @@ public class Kafka08OldConsumer {
         if (minOffset > maxOffset) {
             return;
         }
-        SimpleConsumer consumer = null;
+        SimpleConsumer consumer = THEAD_CONSUMER.get();
         try {
-            consumer = THEAD_CONSUMER.get();
             long nextOffset = minOffset;
-            int fetchTimes = 1;
             while (true) {
                 FetchRequest fetchRequest = createFetchRequest(partition, nextOffset);
                 FetchResponse fetchResponse = getFetchResponseForFetchRequest(consumer, fetchRequest, partition);
                 Iterator<MessageAndOffset> iteratorFromFetchResponse = getIteratorFromFetchResponse(fetchResponse, partition);
-                logger.info("fetch topic {} partition {} fetchTimes: {} offset {}", partition.getTopicName(), partition.getId(), fetchTimes, nextOffset);
+                fetchCount.incrementAndGet();
+                logger.info("fetch topic {} partition {} fetchTimes: {} offset {}", partition.getTopicName(), partition.getId(), fetchCount.get(), nextOffset);
                 MessageAndOffset last = null;
                 while (iteratorFromFetchResponse != null && iteratorFromFetchResponse.hasNext()) {
                     last = iteratorFromFetchResponse.next();
@@ -136,7 +128,7 @@ public class Kafka08OldConsumer {
                     String message = new String(bytes, "UTF-8");
                     fetchCount.incrementAndGet();
                     if (match(message)) {
-                        messages.put(String.format("%s-%s", partition.getId(), last.offset()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
+                        messages.put(getMessageKey(partition.getId(), partition.getId()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
                     }
                     if (last.nextOffset() >= maxOffset) {
                         break;
@@ -149,7 +141,7 @@ public class Kafka08OldConsumer {
                     break;
                 }
                 nextOffset = last.nextOffset();
-                fetchTimes++;
+                fetchCount.incrementAndGet();
             }
         } catch (Exception e) {
             logger.warn("Fetch message buffer for partition {} has failed. Will refresh topic metadata and retry. ",
@@ -190,24 +182,14 @@ public class Kafka08OldConsumer {
         return fetchResponse;
     }
 
-    private boolean match(String message) {
-        if (StringUtils.isBlank(clusterConfig.getKeyword())) {
-            return true;
-        }
-        if (message.contains(clusterConfig.getKeyword())) {
-            return true;
-        }
-        return false;
-    }
-
-    public long getEarliestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
+    private long getEarliestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
         Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetRequestInfo =
                 Collections.singletonMap(new TopicAndPartition(partition.getTopicName(), partition.getId()),
                         new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.EarliestTime(), 1));
         return getOffset(partition, offsetRequestInfo);
     }
 
-    public long getLatestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
+    private long getLatestOffset(KafkaPartition partition) throws KafkaOffsetRetrievalFailureException {
         Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetRequestInfo =
                 Collections.singletonMap(new TopicAndPartition(partition.getTopicName(), partition.getId()),
                         new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.LatestTime(), 1));
@@ -243,7 +225,7 @@ public class Kafka08OldConsumer {
                 String.format("Fetching offset for partition %s has failed.", partition));
     }
 
-    public List<KafkaTopic> getFilteredTopics(String broker, List<Pattern> blacklist, List<Pattern> whitelist) {
+    private List<KafkaTopic> getFilteredTopics(String broker, List<Pattern> blacklist, List<Pattern> whitelist) {
         List<TopicMetadata> topicMetadataList = getFilteredMetadataList(broker, blacklist, whitelist);
 
         List<KafkaTopic> filteredTopics = Lists.newArrayList();
@@ -336,21 +318,20 @@ public class Kafka08OldConsumer {
                 DEFAULT_KAFKA_CLIENT_NAME);
     }
 
-    public Map<String, KafkaMessage> getMessages() {
-        return this.messages;
-    }
-
-    public long getCost() {
-        return this.cost;
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
-        kafkaConsumerConfig.setBroker("10.202.24.5:9096");
+//        kafkaConsumerConfig.setBroker("10.202.24.5:9096");
+//        kafkaConsumerConfig.setClusterName("bus");
+//        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
+//        kafkaConsumerConfig.setKeyword("03201072916045342308052719");
+
+        kafkaConsumerConfig.setBroker("localhost:19092");
         kafkaConsumerConfig.setClusterName("bus");
-        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
-        kafkaConsumerConfig.setKeyword("03201072916045342308052719");
-        Kafka08OldConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
+        kafkaConsumerConfig.setTopic("test1");
+        kafkaConsumerConfig.setKeyword("");
+
+        KafkaConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
+        kafka08Consumer.consume();
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
         logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getTotalCount().get(), kafka08Consumer.getCost(), messages.size(), JSON.toJSONString(messages));
     }

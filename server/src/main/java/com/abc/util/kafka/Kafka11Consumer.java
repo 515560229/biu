@@ -22,27 +22,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Kafka11Consumer {
+public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka11Consumer.class);
-    private static final String GROUP_ID = "__BIU__";
-    private static final int WAIT_MAX_SECONDS = 30;
-    private static final int MAX_MESSAGE_COUNT = 200;
-    private final Map<String, KafkaMessage> messages = new ConcurrentHashMap<>();
-    private KafkaConsumerConfig clusterConfig;
-    private long start;
-    private long cost;
-    private final KafkaConsumer<byte[], byte[]> kafkaConsumer;
-    @Getter
-    private AtomicLong fetchCount = new AtomicLong(0);
-    @Getter
-    private AtomicLong totalCount = new AtomicLong(0);
 
-    public Kafka11Consumer(KafkaConsumerConfig clusterConfig) {
-        this.clusterConfig = clusterConfig;
-        start = System.currentTimeMillis();
+    private final KafkaConsumer<byte[], byte[]> kafkaConsumer;
+
+    public Kafka11Consumer(KafkaConsumerConfig kafkaConsumerConfig) {
+        super(kafkaConsumerConfig);
         //构建properties
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, clusterConfig.getBroker());
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConsumerConfig.getBroker());
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.MAX_VALUE);
@@ -58,35 +47,6 @@ public class Kafka11Consumer {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         kafkaConsumer = new KafkaConsumer<>(props);
-
-        consume();
-
-        kafkaConsumer.close();
-    }
-
-    private boolean match(String message) {
-        if (StringUtils.isBlank(clusterConfig.getKeyword())) {
-            return true;
-        }
-        if (message.contains(clusterConfig.getKeyword())) {
-            return true;
-        }
-        return false;
-    }
-
-    protected String getMessageKey(int partition, long offset) {
-        return String.format("%s-%s", partition, offset);
-    }
-
-    protected String toString(byte[] bytes) {
-        if (bytes == null) {
-            return null;
-        }
-        try {
-            return new String(bytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return e.getMessage();
-        }
     }
 
     protected List<Map<String, Object>> headers(Headers headers) {
@@ -109,11 +69,11 @@ public class Kafka11Consumer {
         while (true) {
             fetchCount.incrementAndGet();
 
-            List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(clusterConfig.getTopic());
+            List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(kafkaConsumerConfig.getTopic());
 
             Collection<TopicPartition> topicPartitions = new ArrayList<>();
             for (PartitionInfo partitionInfo : partitionInfos) {
-                topicPartitions.add(new TopicPartition(clusterConfig.getTopic(), partitionInfo.partition()));
+                topicPartitions.add(new TopicPartition(kafkaConsumerConfig.getTopic(), partitionInfo.partition()));
             }
             kafkaConsumer.assign(topicPartitions);
             kafkaConsumer.seekToBeginning(topicPartitions);
@@ -133,31 +93,32 @@ public class Kafka11Consumer {
                 break;
             }
         }
+        kafkaConsumer.close();
         cost = System.currentTimeMillis() - start;
-        logger.info("finish and close for topic {} {}", clusterConfig.getClusterName(), clusterConfig.getTopic());
+        logger.info("finish and close for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
     }
 
-    public Map<String, KafkaMessage> getMessages() {
-        return this.messages;
-    }
-
-    public long getCost() {
-        return this.cost;
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
-        kafkaConsumerConfig.setBroker("inc-sgs-kafka-01.intsit.sfdc.com.cn:9092," +
-                "inc-sgs-kafka-02.intsit.sfdc.com.cn:9092," +
-                "inc-sgs-kafka-03.intsit.sfdc.com.cn:9092," +
-                "inc-sgs-kafka-04.intsit.sfdc.com.cn:9092," +
-                "inc-sgs-kafka-05.intsit.sfdc.com.cn:9092");
+//        kafkaConsumerConfig.setBroker("inc-sgs-kafka-01.intsit.sfdc.com.cn:9092," +
+//                "inc-sgs-kafka-02.intsit.sfdc.com.cn:9092," +
+//                "inc-sgs-kafka-03.intsit.sfdc.com.cn:9092," +
+//                "inc-sgs-kafka-04.intsit.sfdc.com.cn:9092," +
+//                "inc-sgs-kafka-05.intsit.sfdc.com.cn:9092");
+//        kafkaConsumerConfig.setClusterName("testCluster");
+//        // DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2
+//        // DIS.DELIVERY.ORDER.PIS.OMPS.TIME.SGS-KAFKA-GW.ENV3-2
+//        kafkaConsumerConfig.setTopic("DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2");
+
+        //local env
+        kafkaConsumerConfig.setBroker("localhost:19092");
         kafkaConsumerConfig.setClusterName("testCluster");
-        // DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2
-        // DIS.DELIVERY.ORDER.PIS.OMPS.TIME.SGS-KAFKA-GW.ENV3-2
-        kafkaConsumerConfig.setTopic("DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2");
-        Kafka11Consumer consumer = new Kafka11Consumer(kafkaConsumerConfig);
+        kafkaConsumerConfig.setTopic("test1");
+
+        com.abc.util.kafka.KafkaConsumer consumer = new Kafka11Consumer(kafkaConsumerConfig);
+        consumer.consume();
         Map<String, KafkaMessage> messages = consumer.getMessages();
+
         logger.info("cost: {}, messages: {}", consumer.getCost(), JSON.toJSONString(messages));
         logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.fetchCount.get(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));
     }
