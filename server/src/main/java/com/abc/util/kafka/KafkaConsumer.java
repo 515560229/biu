@@ -55,5 +55,5 @@ public abstract class KafkaConsumer {
         }
     }
 
-    public abstract void consume() throws InterruptedException;
+    public abstract void consume();
 }

@@ -47,7 +47,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
     }
 
     @Override
-    public void consume() throws InterruptedException {
+    public void consume() {
         SimpleConsumer getTopicConsumer = createSimpleConsumer(kafkaConsumerConfig.getBroker());
         THEAD_CONSUMER.set(getTopicConsumer);
         List<KafkaTopic> topics = getFilteredTopics(kafkaConsumerConfig.getBroker(), Collections.emptyList(), Arrays.asList(Pattern.compile(kafkaConsumerConfig.getTopic())));
@@ -70,10 +70,10 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     logger.info("fetch topic {} partition {} offset {}-{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), earliestOffset, latestOffset);
 
                     KafkaOffsetPage kafkaOffsetPage = new KafkaOffsetPage(earliestOffset, latestOffset, SEARCH_OFFSET_SIZE);
+
                     int pageIndex = 1;
                     long[] offsetRange = kafkaOffsetPage.getOffsetRange(pageIndex);
                     while (offsetRange != KafkaOffsetPage.EMPTY) {
-                        logger.info("fetch topic {} partition {} times {} offset {}-{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), pageIndex, offsetRange[0], offsetRange[1]);
                         fetchNextMessageBuffer(kafkaPartition, offsetRange[0], offsetRange[1]);
                         pageIndex++;
                         //判断是否需要退出
@@ -115,10 +115,10 @@ public class Kafka08OldConsumer extends KafkaConsumer {
             long nextOffset = minOffset;
             while (true) {
                 FetchRequest fetchRequest = createFetchRequest(partition, nextOffset);
+                fetchCount.incrementAndGet();
+                logger.info("fetch topic {} partition {} fetchTimes: {} offsetStart {}", partition.getTopicName(), partition.getId(), fetchCount.get(), nextOffset);
                 FetchResponse fetchResponse = getFetchResponseForFetchRequest(consumer, fetchRequest, partition);
                 Iterator<MessageAndOffset> iteratorFromFetchResponse = getIteratorFromFetchResponse(fetchResponse, partition);
-                fetchCount.incrementAndGet();
-                logger.info("fetch topic {} partition {} fetchTimes: {} offset {}", partition.getTopicName(), partition.getId(), fetchCount.get(), nextOffset);
                 MessageAndOffset last = null;
                 while (iteratorFromFetchResponse != null && iteratorFromFetchResponse.hasNext()) {
                     last = iteratorFromFetchResponse.next();
@@ -134,7 +134,10 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                         break;
                     }
                 }
-                if (last == null) {
+                if (last != null) {
+                    logger.info("fetch topic {} partition {} fetchTimes: {} offsetEnd {}", partition.getTopicName(), partition.getId(), fetchCount.get(), last.offset());
+                } else {
+                    logger.info("fetch topic {} partition {} fetchTimes: {} no data", partition.getTopicName(), partition.getId(), fetchCount.get());
                     return;
                 }
                 if (last.nextOffset() >= maxOffset) {

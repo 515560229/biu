@@ -1,10 +1,12 @@
 package com.abc.vo.commonconfigvoproperty;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class KafkaConsumerConfig extends KafkaClusterConfig {
     public static final String VERSION_0_8 = "0.8";
     public static final String VERSION_1_1 = "1.1";

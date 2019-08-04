@@ -5,6 +5,7 @@ import com.abc.schedule.FetchTopicMetaDataScheduler;
 import com.abc.util.freemarker.FreemarkerUtils;
 import com.abc.util.kafka.Kafka08OldConsumer;
 import com.abc.util.kafka.Kafka11Consumer;
+import com.abc.util.kafka.KafkaConsumer;
 import com.abc.util.kafka.KafkaMessage;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
@@ -60,19 +61,17 @@ public class KafkaConsumerController {
         consumerConfig.setKeyword(FreemarkerUtils.INSTANCE.render(consumerConfig.getKeyword(), parameterMap));//变量处理
 
         Map<String, Object> responseObj = new HashMap<>();
+        KafkaConsumer kafkaConsumer = null;
         if (VERSION_08.equals(consumerConfig.getVersion())) {
-            Kafka08OldConsumer kafka08OldConsumer = new Kafka08OldConsumer(consumerConfig);
-            Map<String, KafkaMessage> messages = kafka08OldConsumer.getMessages();
-            AtomicLong totalCount = kafka08OldConsumer.getTotalCount();
-            responseObj.put("totalCount", totalCount.get());
-            responseObj.put("messages", messages.values());
+            kafkaConsumer = new Kafka08OldConsumer(consumerConfig);
         } else {
-            Kafka11Consumer consumer = new Kafka11Consumer(consumerConfig);
-            Map<String, KafkaMessage> messages = consumer.getMessages();
-            AtomicLong totalCount = consumer.getTotalCount();
-            responseObj.put("totalCount", totalCount.get());
-            responseObj.put("messages", messages.values());
+            kafkaConsumer = new Kafka11Consumer(consumerConfig);
         }
+        kafkaConsumer.consume();
+        Map<String, KafkaMessage> messages = kafkaConsumer.getMessages();
+        AtomicLong totalCount = kafkaConsumer.getTotalCount();
+        responseObj.put("totalCount", totalCount.get());
+        responseObj.put("messages", messages.values());
         return Json.succ(oper, responseObj);
     }
 

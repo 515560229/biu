@@ -1,5 +1,7 @@
 package com.abc.util.kafka;
 
+import org.springframework.util.Assert;
+
 public class KafkaOffsetPage {
     private long offsetStart;//可以等,该Offset已有数据
     private long offsetEnd;//不可以等,该offset没有数据, 也就是start和end肯定是不能相等的
@@ -31,6 +33,9 @@ public class KafkaOffsetPage {
      * @return 左闭右开的区间
      */
     public long[] getOffsetRange(int pageIndex) {
+        if (pageTotal == 0) {
+            return EMPTY;
+        }
         if (pageIndex == pageTotal && pageTotal == 1) {
             return new long[]{offsetStart, offsetEnd};
         }
@@ -62,6 +67,10 @@ public class KafkaOffsetPage {
         System.out.println(String.format("%s-%s", offsetRange[0], offsetRange[1]));
         offsetRange = page.getOffsetRange(2);
         System.out.println(String.format("%s-%s", offsetRange[0], offsetRange[1]));
+        //第3种场景  相同，即无数据
+        System.out.println("no data.");
+        page = new KafkaOffsetPage(5, 5);
+        Assert.isTrue(page.getOffsetRange(1) == KafkaOffsetPage.EMPTY);
     }
 
 }

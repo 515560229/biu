@@ -48,7 +48,8 @@ public class Kafka08Consumer extends KafkaConsumer {
         consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(originalProps));
     }
 
-    public void consume() throws InterruptedException {
+    @Override
+    public void consume() {
         //指定需要订阅的topic
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
         topicCountMap.put(kafkaConsumerConfig.getTopic(), new Integer(1));//线程数
@@ -91,7 +92,11 @@ public class Kafka08Consumer extends KafkaConsumer {
                 break;
             }
             waitSeconds++;
-            Thread.sleep(1000 * 1);
+            try {
+                Thread.sleep(1000 * 1);
+            } catch (InterruptedException e) {
+                logger.error("中断失败", e);
+            }
         }
         consumer.shutdown();
         executor.shutdown();
