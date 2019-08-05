@@ -147,7 +147,8 @@
               <el-form-item label="请求体">
                 <el-row>
                   <el-tooltip content="格式化" placement="top">
-                    <el-button type="primary" icon="el-icon-magic-stick" size="mini" circle plain @click="handleFormatRequestBody">
+                    <el-button type="primary" icon="el-icon-magic-stick" size="mini" circle plain
+                               @click="handleFormatRequestBody">
                     </el-button>
                   </el-tooltip>
                 </el-row>
@@ -157,7 +158,8 @@
         </el-row>
         <el-row :gutter="24">
           <el-col :span="12">
-            <template v-if="temp.httpConfig.headers != undefined && temp.httpConfig.headers != null && temp.httpConfig.headers.length > 0">
+            <template
+              v-if="temp.httpConfig.headers != undefined && temp.httpConfig.headers != null && temp.httpConfig.headers.length > 0">
               <template v-for="(header, idx) in temp.httpConfig.headers">
                 <el-row :gutter="24" style="height: 40px;line-height: 40px;">
                   <el-col :span="5" style="text-align: left;">
@@ -202,7 +204,8 @@
           <el-form-item :label="parameter.name" v-for="(parameter,index) in temp.httpConfig.parameters"
                         :key="'param_' + index">
             <el-input v-model="parameter.label" placeholder="请输入该参数的名称">
-              <el-input style="width: 450px;" size="small" v-model="parameter.defaultValue" slot="append" placeholder="默认值. 在列表页面展示时,将默认填充值.">
+              <el-input style="width: 450px;" size="small" v-model="parameter.defaultValue" slot="append"
+                        placeholder="默认值. 在列表页面展示时,将默认填充值.">
               </el-input>
             </el-input>
           </el-form-item>
@@ -507,29 +510,38 @@
             }
           }
         }
-
+        //生成新的参数对象
+        let newParameterObj = parameters ? parameters.reduce((obj, currentValue) => {
+          obj[currentValue] = {
+            name: currentValue,
+            label: null,
+            defaultValue: null
+          };
+          return obj;
+        }, {}) : {};
+        //原有参数
         let oldParameters = tempEntity.httpConfig.parameters;
         tempEntity.httpConfig.parameters = [];//重置
         //参数去重
-        let tempObj = {};
-
-        for (let idx in parameters) {
-          if (tempObj[parameters[idx]]) {
-            continue;//参数重复了
-          }
-          tempObj[parameters[idx]] = 1;
-          //重置后, 默认获取原有的参数信息
-          let oldParameter = this.getParameter(oldParameters, parameters[idx]);
-          if (oldParameter === null || oldParameter === undefined) {
-            //新的参数,则默认处理
-            tempEntity.httpConfig.parameters.splice(idx, 1, parameters[idx]);
+        let oldParameterObj = oldParameters ? oldParameters.reduce((obj, currentValue) => {
+          obj[currentValue.name] = currentValue;
+          return obj;
+        }, {}) : undefined;
+        //重置 并使用新的参数信息
+        tempEntity.httpConfig.parameters = [];
+        let idx = 0;
+        for (let parameterName in newParameterObj) {
+          if (oldParameterObj && oldParameterObj[parameterName]) {
+            tempEntity.httpConfig.parameters.splice(idx, 0, oldParameterObj[parameterName]);
           } else {
-            tempEntity.httpConfig.parameters.splice(idx, 1, {
-              name: parameters[idx],
-              label: oldParameter.label,
-              defaultValue: oldParameter.defaultValue
+            //新的参数
+            tempEntity.httpConfig.parameters.splice(idx, 0, {
+              name: parameterName,
+              label: parameterName,
+              defaultValue: null
             });
           }
+          idx++;
         }
       },
       executeData(idx, row) {
@@ -591,6 +603,7 @@
   .el-form-item {
     margin-bottom: 4px;
   }
+
   .el-dialog__body {
     padding: 4px 20px;
     color: #606266;
