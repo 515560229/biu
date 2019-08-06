@@ -23,6 +23,7 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
     private WsConfig wsConfig;
     private KafkaTopic kafkaTopic;
     private KafkaConsumerConfig consumerConfig;
+    private KafkaProducerConfig producerConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
@@ -37,6 +38,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             setKafkaTopic(JSON.parseObject(commonConfig.getValue(), KafkaTopic.class));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_CONSUMER_INFO.getValue())) {
             setConsumerConfig(JSON.parseObject(commonConfig.getValue(), KafkaConsumerConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_PRODUCER_INFO.getValue())) {
+            setProducerConfig(JSON.parseObject(commonConfig.getValue(), KafkaProducerConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -66,6 +69,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             commonConfig.setValue(JSON.toJSONString(getKafkaTopic()));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_CONSUMER_INFO.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getConsumerConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_PRODUCER_INFO.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getProducerConfig()));
         }
         return commonConfig;
     }

@@ -6,10 +6,12 @@
         </Console>
     </Appenders>
     <Loggers>
+        <!--
         <Logger name="org.apache.kafka.clients" level="trace"/>
         <Logger name="kafka.message" level="trace"/>
         <Logger name="org.springframework.jdbc.core.JdbcTemplate" level="debug"/>
         <Logger name="com.abc" level="info"/>
+        -->
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>

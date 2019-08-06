@@ -3,14 +3,12 @@ package com.abc.controller;
 import com.abc.annotation.PermInfo;
 import com.abc.schedule.FetchTopicMetaDataScheduler;
 import com.abc.util.freemarker.FreemarkerUtils;
-import com.abc.util.kafka.Kafka08OldConsumer;
-import com.abc.util.kafka.Kafka11Consumer;
-import com.abc.util.kafka.KafkaConsumer;
-import com.abc.util.kafka.KafkaMessage;
+import com.abc.util.kafka.*;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
 import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
 import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
+import com.abc.vo.commonconfigvoproperty.KafkaProducerConfig;
 import com.abc.vo.commonconfigvoproperty.Parameter;
 import freemarker.template.TemplateException;
 import org.apache.commons.beanutils.BeanUtils;
@@ -33,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @PermInfo(value = "Kafka模块", pval = "a:kafka:接口")
 @RestController
 @RequestMapping("/kafka/executor")
-public class KafkaConsumerController {
+public class KafkaController {
     public static final String VERSION_08 = "0.8";
     public static final String VERSION_11 = "1.1";
 
@@ -43,7 +41,7 @@ public class KafkaConsumerController {
     @PermInfo("主题内容搜索")
     @RequiresPermissions("a:kafka:consumer")
     @PostMapping(value = "/consumer")
-    public Json execute(@RequestBody CommonConfigVo commonConfigVo) throws InvocationTargetException, IllegalAccessException, IOException, TemplateException {
+    public Json consumer(@RequestBody CommonConfigVo commonConfigVo) throws InvocationTargetException, IllegalAccessException, IOException, TemplateException {
         String oper = "kafkaConsumerExecute";
         KafkaConsumerConfig consumerConfig = commonConfigVo.getConsumerConfig();
 
@@ -72,6 +70,39 @@ public class KafkaConsumerController {
         AtomicLong totalCount = kafkaConsumer.getTotalCount();
         responseObj.put("totalCount", totalCount.get());
         responseObj.put("messages", messages.values());
+        return Json.succ(oper, responseObj);
+    }
+
+    @PermInfo("主题消息发送")
+    @RequiresPermissions("a:kafka:producer")
+    @PostMapping(value = "/producer")
+    public Json producer(@RequestBody CommonConfigVo commonConfigVo) throws InvocationTargetException, IllegalAccessException, IOException, TemplateException {
+        String oper = "kafkaProducerExecute";
+        KafkaProducerConfig producerConfig = commonConfigVo.getProducerConfig();
+
+        //通过主题名称, 找到集群配置
+        String topic = producerConfig.getTopic();
+        int splitIndex = topic.indexOf('.');
+        String cluster = topic.substring(0, splitIndex);
+        String realTopicName = topic.substring(splitIndex + 1);
+
+        KafkaClusterConfig kafkaClusterConfig = fetchTopicMetaDataScheduler.getByClusterName(cluster);
+        BeanUtils.copyProperties(producerConfig, kafkaClusterConfig);
+        producerConfig.setTopic(realTopicName);
+
+        Map<String, Object> parameterMap = getParameterMap(producerConfig.getParameters());
+        producerConfig.setMessage(FreemarkerUtils.INSTANCE.render(producerConfig.getMessage(), parameterMap));//变量处理
+
+        Map<String, Object> responseObj = new HashMap<>();
+        KafkaProducer kafkaProducer = null;
+        if (VERSION_08.equals(producerConfig.getVersion())) {
+            kafkaProducer = new Kafka08Producer(producerConfig);
+        } else {
+            kafkaProducer = new Kafka11Producer(producerConfig);
+        }
+        boolean result = kafkaProducer.send();
+        responseObj.put("result", result);
+        responseObj.put("message", producerConfig.getMessage());
         return Json.succ(oper, responseObj);
     }
 
