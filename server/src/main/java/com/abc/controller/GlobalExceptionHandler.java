@@ -2,21 +2,17 @@ package com.abc.controller;
 
 import com.abc.constant.Codes;
 import com.abc.vo.Json;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 import org.apache.shiro.ShiroException;
 import org.apache.shiro.authz.UnauthenticatedException;
 import org.apache.shiro.authz.UnauthorizedException;
 import org.apache.shiro.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 
 /**
@@ -24,7 +20,7 @@ import java.sql.SQLException;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -34,7 +30,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(SQLException.class)
     @ResponseBody
     public Json handleSQLException(SQLException e) {
+        logger.error(e.getMessage(), e);
         return new Json("", false, Codes.SQL_ERR, e.toString(), null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseBody
+    public Json handleException(Exception e) {
+        logger.error(e.getMessage(), e);
+        return new Json("", false, Codes.SERVER_ERR, e.toString(), null);
     }
 
     @ExceptionHandler(ShiroException.class)

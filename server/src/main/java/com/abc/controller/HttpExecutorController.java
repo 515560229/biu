@@ -10,7 +10,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,9 +62,13 @@ public class HttpExecutorController {
         if (httpMethod == HttpMethod.GET) {
             requestEntity = new RequestEntity<>(httpHeaders, httpMethod, URI.create(url));
         } else {
-            requestEntity = new RequestEntity<>(resolve(httpConfig.getBody(), parameterMap),
-                    httpHeaders,
-                    httpMethod, URI.create(url));
+            if (httpConfig.getBody() != null) {
+                requestEntity = new RequestEntity<>(resolve(httpConfig.getBody(), parameterMap),
+                        httpHeaders,
+                        httpMethod, URI.create(url));
+            } else {
+                requestEntity = new RequestEntity<>(httpHeaders, httpMethod, URI.create(url));
+            }
         }
         ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
 
