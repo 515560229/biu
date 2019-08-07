@@ -17,7 +17,9 @@ public class FreemarkerUtils {
         cfg.setDefaultEncoding("UTF-8");
         Arrays.asList(new NowFunction()
                 , new UUIDFunction()
-                , new RandomIntFunction())
+                , new RandomIntFunction()
+                , new BlankStringFunction()
+                , new GetVarFunction())
                 .forEach(fun -> cfg.setSharedVariable(fun.getFunctionName(), fun));
     }
 

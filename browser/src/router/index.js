@@ -114,15 +114,13 @@ export const asyncRouterMap = [
   {
     path: '/config',
     component: Layout,
-    hidden: true,
     meta: {perm: 'm:config', title: '配置', icon: 'chart'},
     children: [
       {
         path: 'variable',
         name: 'variable',
         component: _import('_config/variable/index'),
-        hidden: true,
-        meta: {perm: 'm:config:variable', title: '全局变量', icon: 'chart', noCache: false}
+        meta: {title: '全局变量', icon: 'chart', noCache: false}
       },
       {
         path: 'variable2',
