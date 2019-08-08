@@ -6,12 +6,12 @@
       <el-input style="width:200px;" v-model="tableQuery.value" placeholder="变量值"></el-input>
       <el-input style="width:200px;" v-model="tableQuery.desc" placeholder="描述"></el-input>
       <span style="margin-right: 15px;"></span>
-      <el-tooltip class="item" content="搜索" placement="top" >
-        <el-button icon="el-icon-search" circle @click="fetchData(1)" v-perm="'b:variable:query'"></el-button>
+      <el-tooltip class="item" content="搜索" placement="top">
+        <el-button icon="el-icon-search" circle @click="fetchData(1)"></el-button>
       </el-tooltip>
     </el-row>
     <div style="margin-bottom: 30px;"></div>
-    <el-button type="primary" icon="el-icon-plus" size="mini" @click="handleCreate" v-perm="'b:config:variable:add'">{{textMap.create}}</el-button>
+    <el-button type="primary" icon="el-icon-plus" size="mini" @click="handleCreate">{{textMap.create}}</el-button>
     <div style="margin-bottom: 30px;"></div>
     <!--列表-->
     <el-table style="width: 100%"
@@ -35,10 +35,12 @@
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-tooltip content="编辑" placement="top">
-            <el-button @click="handleUpdate(scope.$index,scope.row)" size="medium" type="info" icon="el-icon-edit" circle plain></el-button>
+            <el-button @click="handleUpdate(scope.$index,scope.row)" size="medium" type="info" icon="el-icon-edit"
+                       circle plain></el-button>
           </el-tooltip>
           <el-tooltip content="删除" placement="top">
-            <el-button @click="handleDelete(scope.$index,scope.row)" size="medium" type="danger" icon="el-icon-delete" circle plain></el-button>
+            <el-button @click="handleDelete(scope.$index,scope.row)" size="medium" type="danger" icon="el-icon-delete"
+                       circle plain></el-button>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -137,7 +139,7 @@
         checkAll: false,
         isIndeterminate: true,
         //所有角色(管理员除外)
-        roleOptions:[],
+        roleOptions: [],
         roleMap: new Map(),
         // 更新用户的角色的数据
         updateUserRolesData: {
@@ -161,9 +163,9 @@
     },//watch
 
     methods: {
-      hasAdminRole(row){
-        if(row && row.roleList){
-          return row.roleList.some(role=>role.rval==root.rval)
+      hasAdminRole(row) {
+        if (row && row.roleList) {
+          return row.roleList.some(role => role.rval == root.rval)
         }
         return false
       },
@@ -187,7 +189,7 @@
 
       //查询
       fetchData(current) {
-        if(current){
+        if (current) {
           this.tablePage.current = current
         }
         this.tableLoading = true
@@ -221,17 +223,17 @@
 
       //删除
       handleDelete(idx, row) {
-        this.$confirm('您确定要永久删除该用户？', '提示', confirm).then(() => {
-          variableApi.deleteUser({uid: row.uid}).then(res => {
-            this.tableData.splice(idx, 1)
-            --this.tablePage.total
-            this.dialogFormVisible = false
-            this.$message.success("删除成功")
-          })
-        }).catch(() => {
-          this.$message.info("已取消删除")
-        });
-
+        this.$message.info("此功能暂未开放");
+        // this.$confirm('您确定要永久删除该用户？', '提示', confirm).then(() => {
+        //   variableApi.deleteUser({uid: row.uid}).then(res => {
+        //     this.tableData.splice(idx, 1)
+        //     --this.tablePage.total
+        //     this.dialogFormVisible = false
+        //     this.$message.success("删除成功")
+        //   })
+        // }).catch(() => {
+        //   this.$message.info("已取消删除")
+        // });
       },
 
       //新增
@@ -248,7 +250,7 @@
           if (!valid) return;
           variableApi.addVariable(this.temp).then((res) => {
             this.temp = res.data.data;
-            this.tableData.unshift(Object.assign({},this.temp));
+            this.tableData.unshift(Object.assign({}, this.temp));
             ++this.tablePage.total;
             this.dialogFormVisible = false
             this.$message.success("添加成功")
@@ -261,7 +263,7 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-  .role-checkbox{
+  .role-checkbox {
     margin-left: 0px;
     margin-right: 15px;
   }
