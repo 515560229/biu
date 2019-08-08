@@ -155,7 +155,7 @@
         </el-form-item>
         <el-form-item label="请求URL">
           <el-input placeholder="请输入请求URL" v-model="temp.httpConfig.url" class="input-with-select">
-            <el-select v-model="temp.httpConfig.method" slot="prepend" placeholder="请选择">
+            <el-select v-model="temp.httpConfig.method" slot="prepend" placeholder="请选择" style="width:150px">
               <el-option
                 v-for="httpMethod in httpMethods"
                 :key="httpMethod.value"
@@ -541,13 +541,10 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-</style>
-<style rel="stylesheet/scss" lang="scss">
-  .el-select .el-input {
-    width: 130px;
-  }
-
   .el-table__expanded-cell[class*=cell] {
     padding: 4px 10px;
   }
+</style>
+<style rel="stylesheet/scss" lang="scss">
+
 </style>

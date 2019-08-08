@@ -123,7 +123,7 @@
           <el-input placeholder="请输入请求URL" v-model="temp.wsConfig.url" class="input-with-select"
                     @change="findWsOperations">
             <el-select v-model="temp.wsConfig.operationName" slot="append"
-                       placeholder="请选择" @change="handleChangeOperation">
+                       placeholder="请选择" @change="handleChangeOperation" style="width: 150px;">
               <el-option
                 v-for="item in operationNames"
                 :key="item.value"
@@ -616,11 +616,7 @@
     word-break: break-all;
   }
 </style>
-<style rel="stylesheet/scss" lang="scss">
-  .el-select .el-input {
-    width: 130px;
-  }
-
+<style rel="stylesheet/scss" lang="scss" scoped>
   .el-table__expanded-cell[class*=cell] {
     padding: 4px 10px;
   }

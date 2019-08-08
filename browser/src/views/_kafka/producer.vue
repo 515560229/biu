@@ -26,7 +26,6 @@
           :page-size="page1.size"
           layout="total, sizes, prev, pager, next, jumper"
           :total="page1.total"
-          background
         >
         </el-pagination>
       </el-col>
@@ -112,6 +111,7 @@
                      placeholder="请输入主题名称,支持模糊搜索"
                      :remote-method="findTopic"
                      :loading="topicNamesLoading"
+                     style="width: 100%"
           >
             <el-option
               v-for="item in topicNames"
@@ -198,7 +198,7 @@
                 page1: {
                     current: null,
                     pages: null,
-                    size: 10,
+                    size: 50,
                     total: null
                 },
                 //tabs相关
@@ -485,7 +485,4 @@
 <style rel="stylesheet/scss" lang="scss" scoped>
 </style>
 <style rel="stylesheet/scss" lang="scss">
-  .el-select .el-input__inner {
-    min-width: 650px;
-  }
 </style>
