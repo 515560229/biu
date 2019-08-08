@@ -68,7 +68,7 @@ public class VariableConfigController {
         return Json.result(oper, success, variableConfigDB);
     }
 
-    @PermInfo("查询所有系统用户")
+    @PermInfo("查询变量")
     @RequiresPermissions("a:config:variable:selectPage")
     @PostMapping("/query")
     public Json query(@RequestBody VariableQueryConditionVo queryCondition) {
