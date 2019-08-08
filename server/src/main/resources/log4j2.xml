@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+    <properties>
+        <property name="logpath">./logs</property>
+        <property name="pattern">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</property>
+    </properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="${pattern}"/>
         </Console>
+        <RollingRandomAccessFile name="bizFile" immediateFlush="true" bufferSize="1024" fileName="${logpath}/biz.log" filePattern="${logpath}/biz.log.%d{yyyy-MM-dd}">
+            <PatternLayout pattern="${pattern}"/>
+            <TimeBasedTriggeringPolicy />
+            <DefaultRolloverStrategy>
+                <Delete basePath="${logpath}" maxDepth="2" followLinks="true">
+                    <IfFileName glob="logpath.log.*" />
+                    <IfLastModified age="3d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
     </Appenders>
     <Loggers>
         <!--
@@ -14,6 +28,7 @@
         -->
         <Root level="info">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="bizFile"/>
         </Root>
     </Loggers>
 </Configuration>
