@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 
-@PermInfo(value = "变量配置模块", pval = "a:config:接口")
+@PermInfo(value = "变量配置模块", pval = "a:variable:接口")
 @RestController
 @RequestMapping("/config/variable")
 public class VariableConfigController {
@@ -28,7 +28,7 @@ public class VariableConfigController {
     private VariableConfigService variableConfigService;
 
     @PermInfo("添加变量")
-    @RequiresPermissions("a:config:variable:add")
+    @RequiresPermissions("a:variable:add")
     @PostMapping
     public Json add(@RequestBody VariableConfig variableConfig) {
         String oper = "add variable config";
@@ -48,7 +48,7 @@ public class VariableConfigController {
     }
 
     @PermInfo("更新变量")
-    @RequiresPermissions("a:config:variable:update")
+    @RequiresPermissions("a:variable:update")
     @PutMapping
     public Json update(@RequestBody VariableConfig variableConfig) {
         String oper = "update variable config";
@@ -69,7 +69,7 @@ public class VariableConfigController {
     }
 
     @PermInfo("查询变量")
-    @RequiresPermissions("a:config:variable:selectPage")
+    @RequiresPermissions("a:variable:selectPage")
     @PostMapping("/query")
     public Json query(@RequestBody VariableQueryConditionVo queryCondition) {
         String oper = "query variable";

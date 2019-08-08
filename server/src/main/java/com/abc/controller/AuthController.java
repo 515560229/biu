@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import java.io.Serializable;
 import java.util.UUID;
 
+
 /**
  * created by CaiBaoHong at 2018/4/20 17:26<br>
  */
-@PermInfo(value = "登录模块", pval = "a:auth")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {

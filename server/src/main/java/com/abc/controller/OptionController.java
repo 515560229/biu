@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * created by CaiBaoHong at 2018/4/17 16:41<br>
  */
-@PermInfo(value = "选项模块", pval = "a:option")
+@PermInfo(value = "选项模块")
 @RestController
 @RequestMapping("/option")
 public class OptionController {

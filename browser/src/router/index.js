@@ -56,25 +56,29 @@ export const asyncRouterMap = [
   {
     path: '/examples',
     component: Layout,
-    meta: {perm: 'm:examples', title: '练习', icon: 'chart'},
+    hidden: true,
+    meta: {title: '练习', icon: 'chart'},
     children: [
       {
         path: 'examples1',
         name: 'examples1',
+        hidden: true,
         component: _import('_examples/mysqlEditor'),
-        meta: {perm: 'm:examples:MySQLEditor', title: 'MySQLEditor', icon: 'chart', noCache: false}
+        meta: {title: 'MySQLEditor', icon: 'chart', noCache: false}
       },
       {
         path: 'examples2',
         name: 'examples2',
+        hidden: true,
         component: _import('_examples/mysqlEditor2'),
-        meta: {perm: 'm:examples:MySQLEditor2', title: 'MySQLEditor2', icon: 'chart', noCache: false}
+        meta: {title: 'MySQLEditor2', icon: 'chart', noCache: false}
       },
       {
         path: 'tabs',
         name: 'tabs',
+        hidden: true,
         component: _import('_examples/tabs'),
-        meta: {perm: 'm:examples:tabs', title: 'tabs练习', icon: 'chart', noCache: false}
+        meta: {title: 'tabs练习', icon: 'chart', noCache: false}
       }
     ]
   },
@@ -114,7 +118,7 @@ export const asyncRouterMap = [
   {
     path: '/config',
     component: Layout,
-    meta: {perm: 'm:config', title: '配置', icon: 'chart'},
+    meta: {title: '配置', icon: 'chart'},
     children: [
       {
         path: 'variable',
@@ -127,7 +131,7 @@ export const asyncRouterMap = [
         name: 'variable2',
         component: _import('_config/db/index'),
         hidden: true,
-        meta: {perm: 'm:config:db', title: '数据源', icon: 'chart', noCache: false}
+        meta: {title: '数据源', icon: 'chart', noCache: false}
       }
     ]
   },
@@ -135,21 +139,21 @@ export const asyncRouterMap = [
     path: '/operator',
     component: Layout,
     hidden: true,
-    meta: {perm: 'm:operator', title: '操作', icon: 'chart'},
+    meta: {title: '操作', icon: 'chart'},
     children: [
       {
         path: 'dbQueryIndex',
         name: 'dbQueryIndex',
         component: _import('_operator/dbQueryIndex'),
         hidden: true,
-        meta: {perm: 'm:config:variable', title: '数据库1', icon: 'chart', noCache: false}
+        meta: {title: '数据库1', icon: 'chart', noCache: false}
       },
       {
         path: 'kafka',
         name: 'kafka',
         component: _import('_operator/dbQueryIndex2'),
         hidden: true,
-        meta: {perm: 'm:config:variable', title: '数据库2', icon: 'chart', noCache: false}
+        meta: {title: '数据库2', icon: 'chart', noCache: false}
       }
     ]
   },
