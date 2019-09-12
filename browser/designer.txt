@@ -14,6 +14,8 @@ Kafka
   SQL接口增加时查询数据源, 最好分页
   JSON格式化工具
   XML格式化工具,转义
+  执行不保存.
+  行包,bin,conf,lib,logs
 
 
 2. 已完成的

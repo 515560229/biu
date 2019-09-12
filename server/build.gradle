@@ -127,6 +127,42 @@ bootRun {
     classpath = sourceSets.main.runtimeClasspath + configurations.dev
 }
 
+processResources {
+    exclude "**/kafkaCluster.json"
+    exclude "**/log4j2.xml"
+    exclude "*/*"
+}
+
+task deleteDist(type: Copy) {
+    delete('dist')
+}
+
+task copyEnv(type: Copy, dependsOn: [deleteDist]) {
+    from('src/main/env/sf')
+    into('dist/conf')
+}
+
+task copyResource(type: Copy, dependsOn: [copyEnv]) {
+    from('src/main/resources')
+    into('dist/conf')
+    exclude "log4j2.xml"
+    exclude "kafkaCluster.json"
+}
+
+task copyLib(type: Copy, dependsOn: [copyResource]) {
+    from('build/libs/')
+    into('dist/lib')
+}
+
+task copyBin(type: Copy, dependsOn: [copyLib]) {
+    from('src/main/bin')
+    into('dist/bin')
+    exclude "backup"
+}
+
+task dist(type: Copy, dependsOn: [copyBin, build]) {
+}
+
 /**
  * gradle的持续构建和springboot devtools结合，不用修改java代码后自己重启。
  * 开两个terminal，分别执行以下的命令即可：
