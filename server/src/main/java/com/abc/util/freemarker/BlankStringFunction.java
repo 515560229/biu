@@ -17,6 +17,12 @@ public class BlankStringFunction extends CustomFunction {
         return DESC;
     }
 
+    /**
+     * ${blank()} return ""
+     *
+     * @param paramList
+     * @return
+     */
     @Override
     public String execFunction(List paramList) {
         return "";

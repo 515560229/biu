@@ -1,9 +1,9 @@
 package com.abc.util.freemarker;
 
 import com.abc.exception.MessageRuntimeException;
+import com.abc.util.DateTimeUtils;
 import freemarker.template.TemplateModel;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -24,24 +24,22 @@ public class NowFunction extends CustomFunction {
     }
 
     /**
-     * $(now()) return 20190101210000232
-     * $(now('yyyy-MM-dd HH:mm:ss')) return 2019-01-01 21:00:00
-     * $(now('timestamp')) return 1546347600232
+     * ${now()} return 20190101210000232
+     * ${now('yyyy-MM-dd HH:mm:ss')} return 2019-01-01 21:00:00
+     * ${now('timestamp')} return 1546347600232
+     *
      * @param paramList
      * @return
      */
     @Override
     public String execFunction(List paramList) {
-        if (paramList.size() > 1) {
-            throw new MessageRuntimeException("参数个数不能>=2");
+        if (paramList.isEmpty()) {
+            return DateTimeUtils.formatToString(new Date(), DEFAULT_FORMAT);
         }
         if (paramList.size() == 1) {
-            if (paramList.get(0).equals("timestamp")) {
-                return String.valueOf(new Date().getTime());
-            }
-            return new SimpleDateFormat(FreemarkerUtils.getObject(((TemplateModel) paramList.get(0))).toString())
-                    .format(new Date());
+            return DateTimeUtils.formatToString(new Date(), FreemarkerUtils.getObject(((TemplateModel) paramList.get(0))).toString());
         }
-        return new SimpleDateFormat(DEFAULT_FORMAT).format(new Date());
+        throw new MessageRuntimeException("参数个数不正确");
     }
+
 }

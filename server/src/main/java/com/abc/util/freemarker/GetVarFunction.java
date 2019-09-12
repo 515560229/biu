@@ -24,6 +24,12 @@ public class GetVarFunction extends CustomFunction {
         return DESC;
     }
 
+    /**
+     * ${getVar("var")}
+     *
+     * @param paramList
+     * @return
+     */
     @Override
     public String execFunction(List paramList) {
         if (paramList.isEmpty()) {

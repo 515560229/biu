@@ -16,6 +16,8 @@ public class FreemarkerUtils {
     private FreemarkerUtils() {
         cfg.setDefaultEncoding("UTF-8");
         Arrays.asList(new NowFunction()
+                , new NowAddFunction()
+                , new DateTimeAddFunction()
                 , new UUIDFunction()
                 , new RandomIntFunction()
                 , new BlankStringFunction()
@@ -56,6 +58,8 @@ public class FreemarkerUtils {
         String template = "uuid()\t${uuid()}\n" +
                 "now()\t${now()}\n" +
                 "now('yyyy-MM-dd HH:mm:ss')\t${now('yyyy-MM-dd HH:mm:ss')}\n" +
+                "nowAdd('yyyy-MM-dd HH:mm:ss', 3, 'day')\t${nowAdd('yyyy-MM-dd HH:mm:ss', 3, 'day')}\n" +
+                "datetimeAdd('yyyy-MM-dd HH:mm:ss', '2019-09-12 16:15:10', 3, 'day')\t${datetimeAdd('yyyy-MM-dd HH:mm:ss', '2019-09-12 16:15:10', 3, 'day')}\n" +
                 "randomInt()\t${randomInt()}\n" +
                 "randomInt(5)\t${randomInt(5)}\n" +
                 "randomInt(2,5)\t${randomInt(2,5)}";
