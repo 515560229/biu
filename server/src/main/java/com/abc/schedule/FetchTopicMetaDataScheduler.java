@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 @Configuration
+@ConfigurationProperties("kafka.cluster")
 public class FetchTopicMetaDataScheduler {
     private static final Logger logger = LoggerFactory.getLogger(FetchTopicMetaDataScheduler.class);
 
@@ -32,14 +34,14 @@ public class FetchTopicMetaDataScheduler {
     private KafkaTopicFetcher kafkaTopicFetcher;
 
     @Setter
-    private List<KafkaClusterConfig> kafkaClusterConfigList;
+    private List<KafkaClusterConfig> configList;
 
     @Autowired
     private CommonConfigService commonConfigService;
 
     public KafkaClusterConfig getByClusterName(String clusterName) {
-        if (CollectionUtils.isNotEmpty(kafkaClusterConfigList)) {
-            for (KafkaClusterConfig kafkaClusterConfig : kafkaClusterConfigList) {
+        if (CollectionUtils.isNotEmpty(configList)) {
+            for (KafkaClusterConfig kafkaClusterConfig : configList) {
                 if (kafkaClusterConfig.getClusterName().equals(clusterName)) {
                     return kafkaClusterConfig;
                 }
@@ -49,11 +51,9 @@ public class FetchTopicMetaDataScheduler {
     }
 
     @PostConstruct
-    public void init() throws IOException {
-        Resource resource = new ClassPathResource("kafkaCluster.json");
-        kafkaClusterConfigList = JSON.parseArray(IOUtils.toString(resource.getInputStream(), "UTF-8"), KafkaClusterConfig.class);
+    public void init() {
         if (logger.isInfoEnabled()) {
-            logger.info("kafka cluster info: {}", JSON.toJSONString(kafkaClusterConfigList));
+            logger.info("kafka cluster info: {}", JSON.toJSONString(configList));
         }
     }
 
@@ -65,11 +65,11 @@ public class FetchTopicMetaDataScheduler {
 //    @Scheduled(cron = "0/30 * * * * ?")
     public void fetchTopic() {
         logger.info("fetch topic job start.");
-        if (kafkaClusterConfigList == null) {
+        if (configList == null) {
             logger.info("kafka cluster is null");
             return;
         }
-        for (KafkaClusterConfig kafkaClusterConfig : kafkaClusterConfigList) {
+        for (KafkaClusterConfig kafkaClusterConfig : configList) {
             logger.info("fetch topic meta data start. cluster: {}", kafkaClusterConfig.getClusterName());
             try {
                 fetchTopic(kafkaClusterConfig);

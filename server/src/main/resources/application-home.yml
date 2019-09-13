@@ -1,0 +1,41 @@
+db: biu
+server:
+  port: 8888
+  servlet:
+    context-path: /
+    session:
+      cookie:
+        name: BIUSID
+spring:
+  redis:
+    host: localhost
+    port: 6379
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/${db}?characterEncoding=UTF-8&useSSL=false
+    username: root
+    password:
+    druid:
+      initialSize: 5
+      minIdle: 5
+      maxWait: 60000
+      maxActive: 20
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+kafka:
+  cluster:
+    configList:
+      - broker: localhost:9092
+        version: 0.8
+        clusterName: sit-bus
+
+logging:
+  path: ./logs
+  level:
+    com.abc.dao: debug

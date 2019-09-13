@@ -8,12 +8,12 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${pattern}"/>
         </Console>
-        <RollingRandomAccessFile name="bizFile" immediateFlush="true" bufferSize="1024" fileName="${logpath}/biz.log" filePattern="${logpath}/biz.log.%d{yyyy-MM-dd}">
+        <RollingRandomAccessFile name="bizFile" immediateFlush="true" bufferSize="1024" fileName="${logpath}/logs.log" filePattern="${logpath}/logs.log.%d{yyyy-MM-dd}">
             <PatternLayout pattern="${pattern}"/>
             <TimeBasedTriggeringPolicy />
             <DefaultRolloverStrategy>
                 <Delete basePath="${logpath}" maxDepth="2" followLinks="true">
-                    <IfFileName glob="logpath.log.*" />
+                    <IfFileName glob="logs.log.*" />
                     <IfLastModified age="3d" />
                 </Delete>
             </DefaultRolloverStrategy>
