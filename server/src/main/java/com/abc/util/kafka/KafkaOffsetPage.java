@@ -1,12 +1,21 @@
 package com.abc.util.kafka;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.util.Assert;
 
 public class KafkaOffsetPage {
+    @Getter
     private long offsetStart;//可以等,该Offset已有数据
+    @Getter
     private long offsetEnd;//不可以等,该offset没有数据, 也就是start和end肯定是不能相等的
     private long pageSize = 10;
+
+    @Getter
     private long pageTotal = -1;
+    @Setter
+    @Getter
+    private int partitionIdx;
 
     public static final long[] EMPTY = new long[]{};
 

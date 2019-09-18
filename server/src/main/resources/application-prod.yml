@@ -1,0 +1,97 @@
+db: tester01
+server:
+  port: 8888
+  servlet:
+    context-path: /
+    session:
+      cookie:
+        name: BIUSID
+spring:
+  redis:
+    host: localhost
+    port: 6379
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://10.202.4.58:3306/${db}?characterEncoding=UTF-8&useSSL=false
+    username: tester01
+    password: tester01
+    druid:
+      initialSize: 20
+      minIdle: 20
+      maxWait: 60000
+      maxActive: 20
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+kafka:
+  cluster:
+    configList:
+      - broker: inc-sgs-kafka-01.intsit.sfdc.com.cn:9092,inc-sgs-kafka-02.intsit.sfdc.com.cn:9092,inc-sgs-kafka-03.intsit.sfdc.com.cn:9092,inc-sgs-kafka-04.intsit.sfdc.com.cn:9092,inc-sgs-kafka-05.intsit.sfdc.com.cn:9092
+        version: 1.1
+        clusterName: exp08
+      - broker: 10.202.24.5:9096
+        version: 0.8
+        clusterName: sit-bus
+      - broker: 10.203.248.16:9092
+        version: 0.8
+        clusterName: sit-airacpcore
+      - broker: 10.208.16.1:9092
+        version: 0.8
+        clusterName: sit-asuraosmsserver
+      - broker: 10.203.248.6:9095
+        version: 0.8
+        clusterName: sit-dep
+      - broker: 10.203.248.176:9092
+        version: 0.8
+        clusterName: sit-bsp
+      - broker: 10.203.248.36:9095
+        version: 0.8
+        clusterName: sit-eosawsmcore
+      - broker: 10.203.248.61:9095
+        version: 0.8
+        clusterName: sit-eosdsscore
+      - broker: 10.203.248.111:9092
+        version: 0.8
+        clusterName: sit-fvp
+      - broker: 10.202.24.5:9094
+        version: 0.8
+        clusterName: sit-other
+      - broker: 10.202.24.5:9095
+        version: 0.8
+        clusterName: sit-other2
+      - broker: 10.202.116.31:9092
+        version: 0.8
+        clusterName: sit-pis
+      - broker: 10.202.24.5:9091
+        version: 0.8
+        clusterName: sit-sfes
+      - broker: 10.202.24.5:9093
+        version: 0.8
+        clusterName: sit-sfst
+      - broker: 10.203.248.86:9092
+        version: 0.8
+        clusterName: sit-sgsexpcore
+      - broker: 10.203.248.121:9092
+        version: 0.8
+        clusterName: sit-shivaomscore
+      - broker: 10.203.248.31:9095
+        version: 0.8
+        clusterName: sit-shivaomsdms
+      - broker: 10.203.248.146:9092
+        version: 0.8
+        clusterName: sit-shivasisp
+      - broker: 10.202.70.69:9095
+        version: 0.8
+        clusterName: sit-sssnew
+      - broker: 10.202.43.163:9096
+        version: 0.8
+        clusterName: sit-tds
+logging:
+  path: ./logs
+  level:
+    com.abc.dao: debug

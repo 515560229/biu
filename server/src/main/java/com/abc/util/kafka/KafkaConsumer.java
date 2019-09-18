@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -53,6 +54,10 @@ public abstract class KafkaConsumer {
         } catch (UnsupportedEncodingException e) {
             return e.getMessage();
         }
+    }
+
+    protected String randomGroup() {
+        return UUID.randomUUID().toString();
     }
 
     public abstract void consume();

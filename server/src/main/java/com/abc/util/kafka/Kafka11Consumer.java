@@ -1,10 +1,7 @@
 package com.abc.util.kafka;
 
 import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
-import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka110.clients.consumer.ConsumerConfig;
 import org.apache.kafka110.clients.consumer.ConsumerRecord;
 import org.apache.kafka110.clients.consumer.ConsumerRecords;
@@ -17,24 +14,24 @@ import org.apache.kafka110.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka11Consumer.class);
 
-    private final KafkaConsumer<byte[], byte[]> kafkaConsumer;
-
     public Kafka11Consumer(KafkaConsumerConfig kafkaConsumerConfig) {
         super(kafkaConsumerConfig);
-        //构建properties
+    }
+
+    private Properties buildProperties() {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConsumerConfig.getBroker());
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.MAX_VALUE);
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, Integer.MAX_VALUE);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 
@@ -45,8 +42,7 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, GROUP_ID);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        kafkaConsumer = new KafkaConsumer<>(props);
+        return props;
     }
 
     protected List<Map<String, Object>> headers(Headers headers) {
@@ -66,61 +62,90 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
     }
 
     public void consume() {
-        while (true) {
-            fetchCount.incrementAndGet();
+        KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(buildProperties());
+        List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(kafkaConsumerConfig.getTopic());
 
-            List<PartitionInfo> partitionInfos = kafkaConsumer.partitionsFor(kafkaConsumerConfig.getTopic());
+        Collection<TopicPartition> topicPartitions = new ArrayList<>();
+        for (PartitionInfo partitionInfo : partitionInfos) {
+            topicPartitions.add(new TopicPartition(kafkaConsumerConfig.getTopic(), partitionInfo.partition()));
+        }
 
-            Collection<TopicPartition> topicPartitions = new ArrayList<>();
-            for (PartitionInfo partitionInfo : partitionInfos) {
-                topicPartitions.add(new TopicPartition(kafkaConsumerConfig.getTopic(), partitionInfo.partition()));
-            }
-            kafkaConsumer.assign(topicPartitions);
-            kafkaConsumer.seekToBeginning(topicPartitions);
+        Map<Integer, Long> beginningOffsetsByPartitionIdx = new HashMap<>();
+        Map<TopicPartition, Long> beginningOffsets = kafkaConsumer.beginningOffsets(topicPartitions);
+        for (Map.Entry<TopicPartition, Long> entry : beginningOffsets.entrySet()) {
+            beginningOffsetsByPartitionIdx.put((entry.getKey()).partition(), entry.getValue());
+        }
 
-            ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(500);
+        Map<Integer, Long> endOffsetsByPartitionIdx = new HashMap<>();
+        Map<TopicPartition, Long> endOffsets = kafkaConsumer.endOffsets(topicPartitions);
+        for (Map.Entry<TopicPartition, Long> entry : endOffsets.entrySet()) {
+            endOffsetsByPartitionIdx.put((entry.getKey()).partition(), entry.getValue());
+        }
 
-            logger.info("fetch times: {}. count: {}", fetchCount.get(), records.count());
-            for (ConsumerRecord<byte[], byte[]> record : records) {
-                totalCount.incrementAndGet();
-                String message = toString(record.value());
-                if (match(message)) {
-                    messages.put(getMessageKey(record.partition(), record.offset()),
-                            new KafkaMessage(record.partition(), record.offset(), toString(record.key()), message, headers(record.headers())));
-                }
-            }
-            if (messages.size() >= MAX_MESSAGE_COUNT || records.isEmpty() || (System.currentTimeMillis() - start) > WAIT_MAX_SECONDS * 1000) {
-                break;
-            }
+        Map<Integer, KafkaOffsetPage> topicPartitionMap = new HashMap<>();
+        for (PartitionInfo partitionInfo : partitionInfos) {
+            KafkaOffsetPage kafkaOffsetPage = new KafkaOffsetPage(beginningOffsetsByPartitionIdx.get(partitionInfo.partition()),
+                    endOffsetsByPartitionIdx.get(partitionInfo.partition()), 400);
+            kafkaOffsetPage.setPartitionIdx(partitionInfo.partition());
+            topicPartitionMap.put(partitionInfo.partition(), kafkaOffsetPage);
         }
         kafkaConsumer.close();
+
+        /**
+         * 1. 新建线程池处理,一个分区一个线程
+         * 2. 获取该分区的beginningOffset and endOffset
+         * 3. 所有的数据需要while pool
+         */
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+        for (TopicPartition topicPartition : topicPartitions) {
+            executor.submit(() -> {
+                KafkaOffsetPage kafkaOffsetPage = topicPartitionMap.get(topicPartition.partition());
+
+                Properties executorProperties = buildProperties();
+                executorProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID + "-" + topicPartition.partition());
+                executorProperties.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, GROUP_ID + "-" + topicPartition.partition());
+                KafkaConsumer<byte[], byte[]> executorConsumer = new KafkaConsumer<>(executorProperties);
+                logger.info("fetch topic {} partition {} offset {}-{}", kafkaConsumerConfig.getTopic(), topicPartition.partition(),
+                        kafkaOffsetPage.getOffsetStart(), kafkaOffsetPage.getOffsetEnd());
+                executorConsumer.assign(Arrays.asList(topicPartition));
+                executorConsumer.seek(topicPartition, kafkaOffsetPage.getOffsetStart());
+
+                while (true) {
+                    long fetchCountValue = fetchCount.incrementAndGet();
+                    ConsumerRecords<byte[], byte[]> records = executorConsumer.poll(500);
+                    logger.info("fetch times: {}. count: {}.partition: {}", fetchCountValue, records.count(), topicPartition.partition());
+                    if (records.count() == 0) {
+                        break;
+                    }
+                    for (ConsumerRecord<byte[], byte[]> record : records) {
+                        totalCount.incrementAndGet();
+                        String message = toString(record.value());
+                        if (match(message)) {
+                            messages.put(getMessageKey(record.partition(), record.offset()),
+                                    new KafkaMessage(record.partition(), record.offset(), toString(record.key()), message, headers(record.headers())));
+                        }
+                    }
+                }
+                executorConsumer.close();
+                //判断是否需要退出
+                int messageSize = messages.size();
+                if (messageSize >= MAX_MESSAGE_COUNT || (System.currentTimeMillis() - start) / 1000 > WAIT_MAX_SECONDS) {
+                    logger.info("partition: {} fetch break. messageSize:{}", topicPartition.partition(), messageSize);
+                }
+            });
+        }
+
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+            try {
+                Thread.sleep(1000 * 1);
+                logger.info("wait executor terminated for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
+            } catch (InterruptedException e) {
+                logger.error("中断失败", e);
+            }
+        }
+
         cost = System.currentTimeMillis() - start;
         logger.info("finish and close for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
     }
-
-    public static void main(String[] args) throws InterruptedException {
-        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
-//        kafkaConsumerConfig.setBroker("inc-sgs-kafka-01.intsit.sfdc.com.cn:9092," +
-//                "inc-sgs-kafka-02.intsit.sfdc.com.cn:9092," +
-//                "inc-sgs-kafka-03.intsit.sfdc.com.cn:9092," +
-//                "inc-sgs-kafka-04.intsit.sfdc.com.cn:9092," +
-//                "inc-sgs-kafka-05.intsit.sfdc.com.cn:9092");
-//        kafkaConsumerConfig.setClusterName("testCluster");
-//        // DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2
-//        // DIS.DELIVERY.ORDER.PIS.OMPS.TIME.SGS-KAFKA-GW.ENV3-2
-//        kafkaConsumerConfig.setTopic("DIS.DELIVERY.ORDER.PICK.OMS.OPERATION.SGS-KAFKA-GW.ENV3-2");
-
-        //local env
-        kafkaConsumerConfig.setBroker("localhost:19092");
-        kafkaConsumerConfig.setClusterName("testCluster");
-        kafkaConsumerConfig.setTopic("test1");
-
-        com.abc.util.kafka.KafkaConsumer consumer = new Kafka11Consumer(kafkaConsumerConfig);
-        consumer.consume();
-        Map<String, KafkaMessage> messages = consumer.getMessages();
-
-        logger.info("cost: {}, messages: {}", consumer.getCost(), JSON.toJSONString(messages));
-        logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.fetchCount.get(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));
-    }
-
 }

@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * created by CaiBaoHong at 2018/4/17 14:15<br>
- *
+ * -Dspring.profiles.active=home  -Dlog4j2.profile=dev
+ * -Dspring.profiles.active=prod -Dlog4j2.profile=dev
+ * -Dspring.profiles.active=prod -Dlog4j2.profile=prod
  */
 @SpringBootApplication
 @EnableConfigurationProperties
