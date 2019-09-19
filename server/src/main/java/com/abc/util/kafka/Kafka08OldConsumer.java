@@ -318,23 +318,4 @@ public class Kafka08OldConsumer extends KafkaConsumer {
         return new SimpleConsumer(hostAndPort.getHost(), hostAndPort.getPort(), DEFAULT_KAFKA_TIMEOUT_VALUE, DEFAULT_KAFKA_BUFFER_SIZE,
                 DEFAULT_KAFKA_CLIENT_NAME);
     }
-
-    public static void main(String[] args) throws InterruptedException {
-        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
-//        kafkaConsumerConfig.setBroker("10.202.24.5:9096");
-//        kafkaConsumerConfig.setClusterName("bus");
-//        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
-//        kafkaConsumerConfig.setKeyword("03201072916045342308052719");
-
-        kafkaConsumerConfig.setBroker("localhost:19092");
-        kafkaConsumerConfig.setClusterName("bus");
-        kafkaConsumerConfig.setTopic("test1");
-        kafkaConsumerConfig.setKeyword("");
-
-        KafkaConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
-        kafka08Consumer.consume();
-        Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
-        logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", kafka08Consumer.getFetchCount(), kafka08Consumer.getTotalCount().get(), kafka08Consumer.getCost(), messages.size(), JSON.toJSONString(messages));
-    }
-
 }

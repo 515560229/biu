@@ -26,7 +26,7 @@ public class Kafka08OldConsumerTest {
 //        kafkaConsumerConfig.setClusterName("testCluster");
 //        kafkaConsumerConfig.setTopic("test1");
 
-        kafkaConsumerConfig.setKeyword("31127");
+        kafkaConsumerConfig.setKeyword("31127 CX2019091865268466");
         com.abc.util.kafka.KafkaConsumer consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
         consumer.consume();
         Map<String, KafkaMessage> messages = consumer.getMessages();

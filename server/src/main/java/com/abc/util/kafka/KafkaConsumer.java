@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class KafkaConsumer {
     protected static final int WAIT_MAX_SECONDS = 30;
-    protected static final int MAX_MESSAGE_COUNT = 10;
+    protected static final int MAX_MESSAGE_COUNT = 50;
     protected static final String GROUP_ID = "__BIU__";
 
     protected KafkaConsumerConfig kafkaConsumerConfig;
@@ -44,7 +44,15 @@ public abstract class KafkaConsumer {
         if (StringUtils.isBlank(kafkaConsumerConfig.getKeyword())) {
             return true;
         }
-        if (message.contains(kafkaConsumerConfig.getKeyword())) {
+        String[] keywords = kafkaConsumerConfig.getKeyword().split(" ");
+        int keywordsLength = keywords.length;
+        int matchKeywordLength = 0;
+        for (String keyword : keywords) {
+            if (message.contains(keyword)) {
+                matchKeywordLength++;
+            }
+        }
+        if (keywordsLength == matchKeywordLength) {
             return true;
         }
         return false;

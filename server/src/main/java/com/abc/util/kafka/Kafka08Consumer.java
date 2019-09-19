@@ -111,16 +111,4 @@ public class Kafka08Consumer extends KafkaConsumer {
         cost = System.currentTimeMillis() - start;
         logger.info("finish and close for topic {} {}", kafkaConsumerConfig.getClusterName(), kafkaConsumerConfig.getTopic());
     }
-
-    public static void main(String[] args) throws InterruptedException {
-        KafkaConsumerConfig kafkaConsumerConfig = new KafkaConsumerConfig();
-        kafkaConsumerConfig.setZkConnect("10.202.24.5:2181/kafka/bus");
-        kafkaConsumerConfig.setClusterName("bus");
-        kafkaConsumerConfig.setTopic("SHIVA_OMS_UNCALL_ACC_TO_SGS");
-        kafkaConsumerConfig.setKeyword("12201072216241391802552201");
-        Kafka08Consumer kafka08Consumer = new Kafka08Consumer(kafkaConsumerConfig);
-        Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
-        logger.info("fetchCount: {} cost: {}, messages: {}", kafka08Consumer.getFetchCount(), kafka08Consumer.getCost(), JSON.toJSONString(messages));
-    }
-
 }
