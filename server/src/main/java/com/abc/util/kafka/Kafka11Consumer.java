@@ -105,8 +105,8 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
                 executorProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID + "-" + topicPartition.partition());
                 executorProperties.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, GROUP_ID + "-" + topicPartition.partition());
                 KafkaConsumer<byte[], byte[]> executorConsumer = new KafkaConsumer<>(executorProperties);
-                logger.info("fetch topic {} partition {} offset {}-{}", kafkaConsumerConfig.getTopic(), topicPartition.partition(),
-                        kafkaOffsetPage.getOffsetStart(), kafkaOffsetPage.getOffsetEnd());
+                logger.info("fetch topic {} partition {} offset {}-{}.total:{}", kafkaConsumerConfig.getTopic(), topicPartition.partition(),
+                        kafkaOffsetPage.getOffsetStart(), kafkaOffsetPage.getOffsetEnd(), kafkaOffsetPage.getOffsetEnd() - kafkaOffsetPage.getOffsetStart());
                 executorConsumer.assign(Arrays.asList(topicPartition));
                 executorConsumer.seek(topicPartition, kafkaOffsetPage.getOffsetStart());
 

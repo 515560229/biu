@@ -67,7 +67,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     long earliestOffset = getEarliestOffset(kafkaPartition);
                     long latestOffset = getLatestOffset(kafkaPartition);
                     totalCount.addAndGet(latestOffset - earliestOffset);
-                    logger.info("fetch topic {} partition {} offset {}-{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), earliestOffset, latestOffset);
+                    logger.info("fetch topic {} partition {} offset {}-{}.total:{}", kafkaConsumerConfig.getTopic(), kafkaPartition.getId(), earliestOffset, latestOffset, latestOffset - earliestOffset);
 
                     KafkaOffsetPage kafkaOffsetPage = new KafkaOffsetPage(earliestOffset, latestOffset, SEARCH_OFFSET_SIZE);
 
@@ -115,8 +115,8 @@ public class Kafka08OldConsumer extends KafkaConsumer {
             long nextOffset = minOffset;
             while (true) {
                 FetchRequest fetchRequest = createFetchRequest(partition, nextOffset);
-                fetchCount.incrementAndGet();
-                logger.info("fetch topic {} partition {} fetchTimes: {} offsetStart {}", partition.getTopicName(), partition.getId(), fetchCount.get(), nextOffset);
+                long fetchCountValue = fetchCount.incrementAndGet();
+                logger.info("fetch topic {} partition {} fetchTimes: {} offsetStart {}", partition.getTopicName(), partition.getId(), fetchCountValue, nextOffset);
                 FetchResponse fetchResponse = getFetchResponseForFetchRequest(consumer, fetchRequest, partition);
                 Iterator<MessageAndOffset> iteratorFromFetchResponse = getIteratorFromFetchResponse(fetchResponse, partition);
                 MessageAndOffset last = null;
@@ -126,7 +126,6 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     byte[] bytes = new byte[payload.limit()];
                     payload.get(bytes);
                     String message = new String(bytes, "UTF-8");
-                    fetchCount.incrementAndGet();
                     if (match(message)) {
                         messages.put(getMessageKey(partition.getId(), partition.getId()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
                     }
@@ -135,16 +134,15 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     }
                 }
                 if (last != null) {
-                    logger.info("fetch topic {} partition {} fetchTimes: {} offsetEnd {}", partition.getTopicName(), partition.getId(), fetchCount.get(), last.offset());
+                    logger.info("fetch topic {} partition {} fetchTimes: {} offsetEnd {}", partition.getTopicName(), partition.getId(), fetchCountValue, last.offset());
                 } else {
-                    logger.info("fetch topic {} partition {} fetchTimes: {} no data", partition.getTopicName(), partition.getId(), fetchCount.get());
+                    logger.info("fetch topic {} partition {} fetchTimes: {} no data", partition.getTopicName(), partition.getId(), fetchCountValue);
                     return;
                 }
                 if (last.nextOffset() >= maxOffset) {
                     break;
                 }
                 nextOffset = last.nextOffset();
-                fetchCount.incrementAndGet();
             }
         } catch (Exception e) {
             logger.warn("Fetch message buffer for partition {} has failed. Will refresh topic metadata and retry. ",
