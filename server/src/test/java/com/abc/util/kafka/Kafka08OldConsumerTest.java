@@ -2,6 +2,7 @@ package com.abc.util.kafka;
 
 import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -30,7 +31,7 @@ public class Kafka08OldConsumerTest {
         consumer.consume();
         Map<String, KafkaMessage> messages = consumer.getMessages();
 
-        log.info("cost: {}, messages: {}", consumer.getCost(), JSON.toJSONString(messages));
-        log.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.getFetchCount(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));
+        log.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.getFetchCount(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(),
+                JSON.toJSONString(messages, SerializerFeature.PrettyFormat));
     }
 }

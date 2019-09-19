@@ -127,7 +127,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     payload.get(bytes);
                     String message = new String(bytes, "UTF-8");
                     if (match(message)) {
-                        messages.put(getMessageKey(partition.getId(), partition.getId()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
+                        messages.put(getMessageKey(partition.getId(), last.offset()), new KafkaMessage(partition.getId(), last.offset(), null, message, null));
                     }
                     if (last.nextOffset() >= maxOffset) {
                         break;
