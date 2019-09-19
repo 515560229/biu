@@ -16,8 +16,8 @@ public abstract class KafkaConsumer {
     protected static final String GROUP_ID = "__BIU__";
 
     protected KafkaConsumerConfig kafkaConsumerConfig;
-    @Getter
-    protected AtomicLong fetchCount = new AtomicLong(0);//kafka 推的形式, fetch的次数
+
+    private ThreadLocal<Long> fetchCount = ThreadLocal.withInitial(() -> 0L);//kafka 推的形式, fetch的次数
     @Getter
     protected AtomicLong totalCount = new AtomicLong(0);//一共读取了多少条消息
     @Getter
@@ -29,6 +29,15 @@ public abstract class KafkaConsumer {
     public KafkaConsumer(KafkaConsumerConfig kafkaConsumerConfig) {
         start = System.currentTimeMillis();
         this.kafkaConsumerConfig = kafkaConsumerConfig;
+    }
+
+    protected long fetchCountIncrementAndGet() {
+        fetchCount.set(fetchCount.get() + 1);
+        return getFetchCount();
+    }
+
+    public long getFetchCount() {
+        return fetchCount.get();
     }
 
     protected boolean match(String message) {

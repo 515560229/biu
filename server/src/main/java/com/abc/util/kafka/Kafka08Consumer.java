@@ -71,7 +71,7 @@ public class Kafka08Consumer extends KafkaConsumer {
                     {
                         ConsumerIterator<String, String> iterator = kafkaStream.iterator();
                         while (iterator.hasNext()) {
-                            fetchCount.incrementAndGet();
+                            fetchCountIncrementAndGet();
                             if (messages.size() > MAX_MESSAGE_COUNT) {
                                 break;
                             }
@@ -120,7 +120,7 @@ public class Kafka08Consumer extends KafkaConsumer {
         kafkaConsumerConfig.setKeyword("12201072216241391802552201");
         Kafka08Consumer kafka08Consumer = new Kafka08Consumer(kafkaConsumerConfig);
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
-        logger.info("fetchCount: {} cost: {}, messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getCost(), JSON.toJSONString(messages));
+        logger.info("fetchCount: {} cost: {}, messages: {}", kafka08Consumer.getFetchCount(), kafka08Consumer.getCost(), JSON.toJSONString(messages));
     }
 
 }

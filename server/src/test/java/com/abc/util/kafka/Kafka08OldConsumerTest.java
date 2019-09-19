@@ -31,6 +31,6 @@ public class Kafka08OldConsumerTest {
         Map<String, KafkaMessage> messages = consumer.getMessages();
 
         log.info("cost: {}, messages: {}", consumer.getCost(), JSON.toJSONString(messages));
-        log.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.fetchCount.get(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));
+        log.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", consumer.getFetchCount(), consumer.getTotalCount().get(), consumer.getCost(), messages.size(), JSON.toJSONString(messages));
     }
 }

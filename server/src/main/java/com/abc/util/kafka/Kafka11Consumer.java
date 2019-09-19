@@ -111,7 +111,7 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
                 executorConsumer.seek(topicPartition, kafkaOffsetPage.getOffsetStart());
 
                 while (true) {
-                    long fetchCountValue = fetchCount.incrementAndGet();
+                    long fetchCountValue = fetchCountIncrementAndGet();
                     ConsumerRecords<byte[], byte[]> records = executorConsumer.poll(500);
                     logger.info("fetch times: {}. count: {}.partition: {}", fetchCountValue, records.count(), topicPartition.partition());
                     if (records.count() == 0) {

@@ -115,7 +115,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
             long nextOffset = minOffset;
             while (true) {
                 FetchRequest fetchRequest = createFetchRequest(partition, nextOffset);
-                long fetchCountValue = fetchCount.incrementAndGet();
+                long fetchCountValue = fetchCountIncrementAndGet();
                 logger.info("fetch topic {} partition {} fetchTimes: {} offsetStart {}", partition.getTopicName(), partition.getId(), fetchCountValue, nextOffset);
                 FetchResponse fetchResponse = getFetchResponseForFetchRequest(consumer, fetchRequest, partition);
                 Iterator<MessageAndOffset> iteratorFromFetchResponse = getIteratorFromFetchResponse(fetchResponse, partition);
@@ -334,7 +334,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
         KafkaConsumer kafka08Consumer = new Kafka08OldConsumer(kafkaConsumerConfig);
         kafka08Consumer.consume();
         Map<String, KafkaMessage> messages = kafka08Consumer.getMessages();
-        logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", kafka08Consumer.fetchCount.get(), kafka08Consumer.getTotalCount().get(), kafka08Consumer.getCost(), messages.size(), JSON.toJSONString(messages));
+        logger.info("fetchCount: {} totalCount: {} cost: {}, message size: {} messages: {}", kafka08Consumer.getFetchCount(), kafka08Consumer.getTotalCount().get(), kafka08Consumer.getCost(), messages.size(), JSON.toJSONString(messages));
     }
 
 }
