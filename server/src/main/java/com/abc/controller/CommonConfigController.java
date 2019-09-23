@@ -136,8 +136,11 @@ public class CommonConfigController {
         EntityWrapper<CommonConfig> wrapper = new EntityWrapper<>();
         wrapper.eq("`type`", queryCondition.getType());
         if (StringUtils.isNotBlank(queryCondition.getKey())) {
-            wrapper.andNew().like(true, "`name`", queryCondition.getKey());
-            wrapper.or().like(true, "`desc`", queryCondition.getKey());
+            String[] keys = queryCondition.getKey().split(" ");
+            for (String key : keys) {
+                wrapper.andNew().like(true, "`name`", key);
+                wrapper.or().like(true, "`desc`", key);
+            }
         }
         if (queryCondition.getOnlyCreateByMine() != null
                 && queryCondition.getOnlyCreateByMine()) {
