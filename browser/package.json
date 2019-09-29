@@ -44,7 +44,7 @@
     "nprogress": "0.2.0",
     "pretty-data": "^0.40.0",
     "screenfull": "3.3.2",
-    "showdown": "1.8.5",
+    "showdown": "^1.8.5",
     "simplemde": "1.11.2",
     "sortablejs": "1.7.0",
     "sql.js": "^1.0.0",

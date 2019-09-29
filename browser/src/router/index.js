@@ -83,6 +83,25 @@ export const asyncRouterMap = [
     ]
   },
   {
+    path: '/docs',
+    component: Layout,
+    meta: {title: '文档说明', icon: 'chart'},
+    children: [
+      {
+        path: 'project',
+        name: 'project',
+        component: _import('_docs/projectDoc'),
+        meta: {title: '项目说明', icon: 'chart', noCache: true}
+      },
+      {
+        path: 'function',
+        name: 'function',
+        component: _import('_docs/functions'),
+        meta: {title: '自定义函数', icon: 'chart', noCache: true},
+      }
+    ]
+  },
+  {
     path: '/system',
     component: Layout,
     meta: {perm: 'm:sys', title: '系统', icon: 'chart'},

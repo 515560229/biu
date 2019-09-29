@@ -44,6 +44,7 @@ public class ShiroConfig {
         chain.addPathDefinition("/page/index", "anon");
         chain.addPathDefinition("/demo", "anon");
         chain.addPathDefinition("/dist/**", "anon");
+        chain.addPathDefinition("/docs/**", "anon");
 
         //除了以上的请求外，其它请求都需要登录
         chain.addPathDefinition("/**", "authc");
