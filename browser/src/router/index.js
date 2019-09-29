@@ -240,6 +240,25 @@ export const asyncRouterMap = [
       }
     ]
   },
+  {
+    path: '/others',
+    component: Layout,
+    meta: {title: '其它工具', icon: 'chart'},
+    children: [
+      {
+        path: 'jsonFormat',
+        name: 'jsonFormat',
+        component: _import('_others/jsonFormat'),
+        meta: {title: 'JSON格式化', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'jsonFormat2',
+        name: 'jsonFormat2',
+        component: _import('_others/jsonFormat'),
+        meta: {title: 'JSON格式化2', icon: 'chart', noCache: false}
+      }
+    ]
+  },
   /*
   {
     path: '/menu1',
