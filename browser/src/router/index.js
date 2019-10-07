@@ -252,10 +252,10 @@ export const asyncRouterMap = [
         meta: {title: 'JSON格式化', icon: 'chart', noCache: false}
       },
       {
-        path: 'jsonFormat2',
-        name: 'jsonFormat2',
-        component: _import('_others/jsonFormat'),
-        meta: {title: 'JSON格式化2', icon: 'chart', noCache: false}
+        path: 'xmlFormat',
+        name: 'xmlFormat',
+        component: _import('_others/xmlFormat'),
+        meta: {title: 'XML格式化', icon: 'chart', noCache: false}
       }
     ]
   },

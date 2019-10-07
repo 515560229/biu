@@ -12,11 +12,30 @@ Kafka
 
 1. 未完成的
   SQL接口增加时查询数据源, 最好分页
-  JSON格式化工具
-  XML格式化工具,转义
   执行不保存.
-  行包,bin,conf,lib,logs
+  xml,json格式化增加历史结果标签.
 
 
 2. 已完成的
 
+3. 其它样本
+标准格式化样本
+{
+"a":"a",
+"b":1,
+"c": [1,2,3],
+"d": [{"c1":"d1"}]
+}
+去转义格式化样本
+{"friend":"{\"friend\":\"{\\\"age\\\":20,\\\"username\\\":\\\"wangwu\\\"}\",\"age\":10,\"username\":\"lisi\"}","username":"zhangsan"}
+
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+     <book>
+          <name>哈里波特</name>
+          <price>10</price>
+          <memo>这是一本很好看的书。</memo>
+          <remark>&lt;age&gt;10&lt;/age&gt;</remark>
+     </book>
+</books>
