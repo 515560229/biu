@@ -1,3 +1,5 @@
+import jsonlint from "jsonlint";//https://github.com/vkiryukhin/pretty-data
+
 /**
  * Created by jiachenpan on 16/11/18.
  */
@@ -311,5 +313,64 @@ export function formatString(str) {
     } catch (e) {
     }
     return result;
+  }
+}
+
+
+/**
+ * 格式化字符串
+ * @param input 输入字符串
+ * @param transfer 是否转义
+ * @param returnString 是否返回string. true:则返回字符串，false:则返回对象。仅对json有效
+ * @returns {*}
+ */
+export function format(input, transfer, returnString) {
+  if (input !== undefined && input.trim() !== '') {
+    try {
+      //先进行json转换
+      let tempObj = jsonlint.parse(input);
+      if (transfer) {
+        renderJson(tempObj);
+      }
+      if (returnString) {
+        return JSON.stringify(tempObj, null, 2);
+      }
+      return tempObj;
+    } catch (e) {
+      //再进行xml转换
+      try {
+        let tempInput = input;
+        if (transfer) {
+          tempInput = input.replace(new RegExp("&nbsp;", "g"), "")
+            .replace(new RegExp("&lt;", "g"), "<")
+            .replace(new RegExp("&gt;", "g"), ">")
+            .replace(new RegExp("&amp;", "g"), "&")
+            .replace(new RegExp("&quot;", "g"), "\"")
+            .replace(new RegExp("&apos;", "g"), "'")
+            .replace(new RegExp("&times;", "g"), "×")
+            .replace(new RegExp("&divde;", "g"), "÷")
+        }
+        let data = pd.xml(tempInput);
+        return data;
+      } catch (e) {
+        //还报错，则原样返回
+        return input;
+      }
+    }
+  }
+}
+
+function renderJson(obj) {
+  for (let key in obj) {
+    if (typeof obj[key] === "string") {
+      try {
+        let value = jsonlint.parse(obj[key]);
+        //如果string转换后是合不法的对象,则将该key指定这个对象
+        obj[key] = value;
+        this.renderJson(value);
+      } catch (e) {
+        //do nothing
+      }
+    }
   }
 }

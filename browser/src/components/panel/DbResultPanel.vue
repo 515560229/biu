@@ -27,10 +27,8 @@
 </template>
 <script>
 
-  import {deepClone, isJsonString, resetTemp} from '@/utils'
+  import {deepClone, isJsonString, resetTemp, format} from '@/utils'
   import debounce from 'lodash/debounce'
-  //https://github.com/vkiryukhin/pretty-data
-  let pd = require('pretty-data').pd;
 
   export default {
     name: 'HttpResultPanel',
@@ -42,6 +40,7 @@
       return {
         //方法
         isJsonString: isJsonString,
+        format: format,
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
@@ -64,15 +63,7 @@
         }
 
         this.formatDialogVisible = true;
-        if (isJsonString(str)) {
-          this.needFormatValue = pd.json(str);
-        } else {
-          try {
-            this.needFormatValue = pd.xml(str);
-          } catch (e) {
-            this.needFormatValue = str;
-          }
-        }
+        this.needFormatValue = this.format(str, true, true);
       }
     }
   }
