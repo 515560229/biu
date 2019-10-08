@@ -20,6 +20,7 @@
       </el-table>
     </el-row>
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
+      <el-switch v-model="transfer" active-text="是否转义" style="margin-bottom: 10px;" @change="handleChange"></el-switch>
       <el-input type="textarea" :autosize='cellDetailsSize'
                 v-model="needFormatValue" readonly size="small"></el-input>
     </el-dialog>
@@ -44,6 +45,8 @@
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
+        oldValue: null,
+        transfer: true,
 
         cellDetailsSize: {
           minRows: 16,
@@ -56,14 +59,20 @@
     },
     computed: {},
     methods: {
-      handleCellDbClick(row, column, cell, event) {
-        let str = row[column.property];
-        if (str === undefined || str == null || str === '') {
+      showFormat() {
+        if (this.oldValue === undefined || this.oldValue == null || this.oldValue === '') {
           return;
         }
-
         this.formatDialogVisible = true;
-        this.needFormatValue = this.format(str, true, true);
+        this.needFormatValue = format(this.oldValue, this.transfer, true);
+      },
+      handleCellDbClick(row, column, cell, event) {
+        let str = row[column.property];
+        this.oldValue = str;
+        this.showFormat();
+      },
+      handleChange(val) {
+        this.showFormat();
       }
     }
   }

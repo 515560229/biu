@@ -324,6 +324,7 @@ export function formatString(str) {
  * @param returnString 是否返回string. true:则返回字符串，false:则返回对象。仅对json有效
  * @returns {*}
  */
+let pd = require('pretty-data').pd;
 export function format(input, transfer, returnString) {
   if (input !== undefined && input.trim() !== '') {
     try {
@@ -365,11 +366,17 @@ function renderJson(obj) {
     if (typeof obj[key] === "string") {
       try {
         let value = jsonlint.parse(obj[key]);
-        //如果string转换后是合不法的对象,则将该key指定这个对象
-        obj[key] = value;
-        this.renderJson(value);
+        if (typeof value === "object" || Array.isArray(value)) {
+          //如果string转换后是合不法的对象,则将该key指定这个对象
+          obj[key] = value;
+          renderJson(value);
+        }
       } catch (e) {
         //do nothing
+      }
+    } else if (Array.isArray(obj[key])) {
+      for (let idx in obj[key]) {
+        renderJson(obj[key][idx]);
       }
     }
   }

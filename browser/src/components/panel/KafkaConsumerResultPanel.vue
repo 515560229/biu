@@ -22,6 +22,7 @@
       </el-table>
     </el-row>
     <el-dialog :visible.sync="formatDialogVisible" width="60%">
+      <el-switch v-model="transfer" active-text="转义" style="margin-bottom: 10px;" @change="handleChange"></el-switch>
       <el-input type="textarea" :autosize='cellDetailsSize'
                 v-model="needFormatValue" readonly size="small"></el-input>
     </el-dialog>
@@ -29,10 +30,7 @@
 </template>
 <script>
 
-  import {deepClone, isJsonString, resetTemp} from '@/utils'
-  import debounce from 'lodash/debounce'
-  //https://github.com/vkiryukhin/pretty-data
-  let pd = require('pretty-data').pd;
+  import {deepClone, isJsonString, resetTemp, format} from '@/utils'
 
   export default {
     name: 'KafkaConsumerResultPanel',
@@ -44,9 +42,12 @@
       return {
         //方法
         isJsonString: isJsonString,
+        format: format,
         //格式化相关
         needFormatValue: null,
         formatDialogVisible: false,
+        transfer: true,
+        oldValue: null,
 
         cellDetailsSize: {
           minRows: 16,
@@ -54,27 +55,26 @@
         }
       }
     },
-    watch: {},//watch
+    watch: {
+    },//watch
     mounted() {
     },
     computed: {},
     methods: {
-      handleCellDbClick(row, column, cell, event) {
-        let str = row[column.property];
-        if (str === undefined || str == null || str === '') {
+      showFormat() {
+        if (this.oldValue === undefined || this.oldValue == null || this.oldValue === '') {
           return;
         }
-
         this.formatDialogVisible = true;
-        if (isJsonString(str)) {
-          this.needFormatValue = pd.json(str);
-        } else {
-          try {
-            this.needFormatValue = pd.xml(str);
-          } catch (e) {
-            this.needFormatValue = str;
-          }
-        }
+        this.needFormatValue = format(this.oldValue, this.transfer, true);
+      },
+      handleCellDbClick(row, column, cell, event) {
+        let str = row[column.property];
+        this.oldValue = str;
+        this.showFormat();
+      },
+      handleChange(val) {
+        this.showFormat();
       }
     }
   }
