@@ -8,6 +8,9 @@ import com.abc.vo.commonconfigvoproperty.HttpConfig;
 import freemarker.template.TemplateException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -22,10 +25,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.Charset;
+import java.util.*;
 
 @PermInfo(value = "HTTP模块", pval = "a:http:接口")
 @RestController
@@ -54,8 +55,8 @@ public class HttpExecutorController {
                 }
             }
         }
-        //处理url参数
-        String url = resolve(httpConfig.getUrl(), parameterMap);
+        //处理url参数和urlEncode
+        String url = urlEncode(resolve(httpConfig.getUrl(), parameterMap));
 
         HttpMethod httpMethod = HttpMethod.resolve(httpConfig.getMethod());
         RequestEntity<String> requestEntity = null;
@@ -93,4 +94,18 @@ public class HttpExecutorController {
         return FreemarkerUtils.INSTANCE.render(str, parameterMap);
     }
 
+    private String urlEncode(String url) {
+        int i = url.indexOf("?");
+        List<NameValuePair> nameValuePairs = new ArrayList<>();
+        if (i > 0) {
+            String paramters = url.substring(i + 1);
+            String[] paramValuePairs = paramters.split("&");
+            for (String paramValuePair : paramValuePairs) {
+                int index2 = paramValuePair.indexOf("=");
+                nameValuePairs.add(new BasicNameValuePair(paramValuePair.substring(0, index2), paramValuePair.substring(index2 + 1)));
+            }
+        }
+        String urlParamters = URLEncodedUtils.format(nameValuePairs, Charset.forName("UTF-8"));
+        return String.format("%s?%s", url.substring(0, i), urlParamters);
+    }
 }
