@@ -317,6 +317,30 @@ export function formatString(str) {
 }
 
 
+let pd = require('pretty-data').pd;
+
+/**
+ * JSON格式化字符串
+ * @param input 输入字符串
+ * @param transfer 是否转义
+ * @param returnString 是否返回string. true:则返回字符串，false:则返回对象。
+ * @returns {*}
+ */
+export function jsonFormat(input, transfer, returnString) {
+  if (input !== undefined && input.trim() !== '') {
+    let tempObj = jsonlint.parse(input);
+    if (transfer) {
+      renderJson(tempObj);
+    }
+    if (returnString) {
+      return JSON.stringify(tempObj, null, 2);
+    }
+    return tempObj;
+  } else {
+    return input;
+  }
+}
+
 /**
  * 格式化字符串
  * @param input 输入字符串
@@ -324,7 +348,6 @@ export function formatString(str) {
  * @param returnString 是否返回string. true:则返回字符串，false:则返回对象。仅对json有效
  * @returns {*}
  */
-let pd = require('pretty-data').pd;
 export function format(input, transfer, returnString) {
   if (input !== undefined && input.trim() !== '') {
     try {
@@ -358,6 +381,8 @@ export function format(input, transfer, returnString) {
         return input;
       }
     }
+  } else {
+    return input;
   }
 }
 

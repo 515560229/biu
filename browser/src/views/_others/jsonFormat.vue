@@ -41,6 +41,7 @@
   import jsonlint from 'jsonlint'
   import debounce from 'lodash/debounce'
   import VueJsonPretty from 'vue-json-pretty'
+  import {jsonFormat} from '@/utils'
 
   export default {
     name: 'jsonFormatView',
@@ -88,7 +89,7 @@
         let jsonInput = this.tableData['input' + parseInt(this.currentTabName - 1)];
         if (jsonInput !== undefined && jsonInput.trim() !== '') {
           try {
-            let tempObj = jsonlint.parse(jsonInput);
+            let tempObj = jsonFormat(jsonInput, false, false);
             this.calcTabsAndFillData(tempObj);
           } catch (e) {
             this.$message({message: e.message, type: 'warning', showClose: true})
@@ -99,26 +100,11 @@
         //设置当前tab的数据
         this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), data);
       },
-      renderJson(obj) {
-        for (let key in obj) {
-          if (typeof obj[key] === "string") {
-            try {
-              let value = jsonlint.parse(obj[key]);
-              //如果string转换后是合不法的对象,则将该key指定这个对象
-              obj[key] = value;
-              this.renderJson(value);
-            } catch (e) {
-              //do nothing
-            }
-          }
-        }
-      },
       formatJsonWithRemoveTransferredMeaning() {
         let jsonInput = this.tableData['input' + parseInt(this.currentTabName - 1)];
         if (jsonInput !== undefined && jsonInput.trim() !== '') {
           try {
-            let tempObj = jsonlint.parse(jsonInput);
-            this.renderJson(tempObj);
+            let tempObj = jsonFormat(jsonInput, true, false);
             this.calcTabsAndFillData(tempObj);
           } catch (e) {
             this.$message({message: e.message, type: 'warning', showClose: true})
