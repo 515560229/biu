@@ -371,9 +371,9 @@
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-</style>
-<style rel="stylesheet/scss" lang="scss">
   .el-table__expanded-cell[class*=cell] {
     padding: 4px 10px;
   }
+</style>
+<style rel="stylesheet/scss" lang="scss">
 </style>
