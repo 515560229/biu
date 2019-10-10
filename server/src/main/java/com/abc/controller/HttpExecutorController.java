@@ -96,14 +96,15 @@ public class HttpExecutorController {
 
     private String urlEncode(String url) {
         int i = url.indexOf("?");
+        if (i < 0) {
+            return url;//无参数
+        }
         List<NameValuePair> nameValuePairs = new ArrayList<>();
-        if (i > 0) {
-            String paramters = url.substring(i + 1);
-            String[] paramValuePairs = paramters.split("&");
-            for (String paramValuePair : paramValuePairs) {
-                int index2 = paramValuePair.indexOf("=");
-                nameValuePairs.add(new BasicNameValuePair(paramValuePair.substring(0, index2), paramValuePair.substring(index2 + 1)));
-            }
+        String paramters = url.substring(i + 1);
+        String[] paramValuePairs = paramters.split("&");
+        for (String paramValuePair : paramValuePairs) {
+            int index2 = paramValuePair.indexOf("=");
+            nameValuePairs.add(new BasicNameValuePair(paramValuePair.substring(0, index2), paramValuePair.substring(index2 + 1)));
         }
         String urlParamters = URLEncodedUtils.format(nameValuePairs, Charset.forName("UTF-8"));
         return String.format("%s?%s", url.substring(0, i), urlParamters);
