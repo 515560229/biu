@@ -108,7 +108,7 @@
           <span slot="label"><i
             v-bind:class="{'el-icon-date': !tabLoading['loading' + (index + 1)], 'el-icon-loading': tabLoading['loading' + (index + 1)]}"
             v-if="item.title == currentTabName"></i>{{item.title}}</span>
-          <http-result-panel :value="tableData['data' + index]"></http-result-panel>
+          <http-result-panel :value="tableData['data' + index]" :title="tableData['title' + index]"></http-result-panel>
         </el-tab-pane>
       </el-tabs>
     </el-row>
@@ -559,12 +559,14 @@
           }
 
           this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), data);
+          this.$set(this.tableData, "title" + (parseInt(this.currentTabName) - 1), row.name);
           this.$set(this.tableData, "loading" + idx, false);
           this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         }).catch(e => {
           console.log(e);
           //当前标签页数据置空
           this.$set(this.tableData, "data" + (parseInt(this.currentTabName) - 1), null);
+          this.$set(this.tableData, "title" + (parseInt(this.currentTabName) - 1), row.name);
           this.$set(this.tableData, "loading" + idx, false);
           this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
         });

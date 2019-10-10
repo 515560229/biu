@@ -1,6 +1,14 @@
 <template>
   <el-row v-if="value !== undefined && value !== null" style="font-size: 12px;">
     <el-row>
+      <el-row :gutter="24" v-if="title !== undefined && title !== ''">
+        <template v-if="value.response.statusCodeValue === 200">
+          <el-tag type="success">{{title}}</el-tag>
+        </template>
+        <template v-else>
+          <el-tag type="danger">{{title}}</el-tag>
+        </template>
+      </el-row>
       <el-row :gutter="24">
         <template v-if="value.response.statusCodeValue === 200">
           <el-tag type="success">{{value.request.url}}</el-tag>
@@ -81,7 +89,8 @@
     name: 'HttpResultPanel',
     components: {},
     props: {
-      value: Object
+      value: Object,
+      title: ""
     },
     data() {
       return {
