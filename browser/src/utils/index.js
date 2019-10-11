@@ -386,21 +386,28 @@ export function format(input, transfer, returnString) {
   }
 }
 
+function renderJsonString(str) {
+  try {
+    let value = jsonlint.parse(str);
+    if (typeof value === "object" || Array.isArray(value)) {
+      //如果string转换后是合法的对象,则将该key指定这个对象
+      renderJson(value);
+    }
+    return value;
+  } catch (e) {
+    return str;//转换json出错，非json串等原样返回
+  }
+}
+
 function renderJson(obj) {
   for (let key in obj) {
     if (typeof obj[key] === "string") {
-      try {
-        let value = jsonlint.parse(obj[key]);
-        if (typeof value === "object" || Array.isArray(value)) {
-          //如果string转换后是合不法的对象,则将该key指定这个对象
-          obj[key] = value;
-          renderJson(value);
-        }
-      } catch (e) {
-        //do nothing
-      }
+      obj[key] = renderJsonString(obj[key]);
     } else if (Array.isArray(obj[key])) {
       for (let idx in obj[key]) {
+        if (typeof obj[key][idx] === "string") {
+          obj[key][idx] = renderJsonString(obj[key][idx]);
+        }
         renderJson(obj[key][idx]);
       }
     }
