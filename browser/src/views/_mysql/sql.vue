@@ -211,7 +211,7 @@
           type: "db"
         },
         //查询结果相关
-        tableData: [],
+        tableData: {},
         //弹出框及新增和修改相关
         dialogFormVisible: false,
         dialogStatus: '',
@@ -262,7 +262,7 @@
         commonConfigApi.queryCommonConfig(this.dbQueryNamesQuery, this.page1).then(res => {
           this.dbQueryNamesData = res.data.page.records;
           this.dbQueryNamesLoading = false
-          this.tableData = {};
+          //this.tableData = {};
           pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
         })
       },
