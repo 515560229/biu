@@ -20,9 +20,26 @@ public class VariableConfig implements Serializable {
     @TableField("desc")
     private String desc;
 
+    private String creator;//创建人
     private Date created;   // 创建时间
+    private String modifier;//修改人
     private Date updated;   // 修改时间
 
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getModifier() {
+        return modifier;
+    }
+
+    public void setModifier(String modifier) {
+        this.modifier = modifier;
+    }
 
     public String getName() {
         return name;

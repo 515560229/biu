@@ -4,6 +4,7 @@ package com.abc.controller;
 import com.abc.annotation.PermInfo;
 import com.abc.entity.VariableConfig;
 import com.abc.service.VariableConfigService;
+import com.abc.util.CurrentUser;
 import com.abc.util.PageUtils;
 import com.abc.vo.Json;
 import com.abc.vo.VariableQueryConditionVo;
@@ -41,7 +42,9 @@ public class VariableConfigController {
             return Json.fail(oper, "变量已被使用");
         }
         variableConfig.setCreated(new Date());
+        variableConfig.setCreator(CurrentUser.getUsername());
         variableConfig.setUpdated(variableConfig.getCreated());
+        variableConfig.setModifier(CurrentUser.getUsername());
 
         boolean success = variableConfigService.insert(variableConfig);
         return Json.result(oper, success, variableConfig);
@@ -63,6 +66,7 @@ public class VariableConfigController {
         variableConfigDB.setValue(variableConfig.getValue());
         variableConfigDB.setDesc(variableConfig.getDesc());
         variableConfigDB.setUpdated(new Date());
+        variableConfigDB.setModifier(CurrentUser.getUsername());
 
         boolean success = variableConfigService.updateById(variableConfigDB);
         return Json.result(oper, success, variableConfigDB);
