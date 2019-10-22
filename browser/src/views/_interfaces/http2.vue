@@ -45,13 +45,13 @@
         </el-table-column>
         <el-table-column align="left" width="178px">
           <template slot-scope="scope">
-            <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger"
+            <el-tooltip content="删除" placement="top" >
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          icon="el-icon-delete"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)"
+              <el-button @click="handleEdit(scope.$index, scope.row)" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          size="mini" type="info"
                          icon="el-icon-edit"
                          circle plain></el-button>
@@ -226,6 +226,7 @@
 
 <script>
 
+  import { mapState } from 'vuex'
   import commonConfigApi from '@/api/config/commonConfig'
   import httpApi from '@/api/operate/httpApi'
   import {deepClone, isJsonString, resetTemp, formatString} from '@/utils'
@@ -337,7 +338,13 @@
         this.findHttpInterface()
       }, 300)
     },//watch
-    computed: {},
+    computed: {
+      ...mapState({
+        currentUser: function (state) {
+          return state.user.name;
+        }
+      })
+    },
     methods: {
       headerKeySearch(queryString, cb) {
         let dataList = this.commonHeaders;

@@ -41,11 +41,11 @@
         <el-table-column align="left" width="178px">
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
-              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
+              <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
-              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+              <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="复制" placement="top">
@@ -152,6 +152,7 @@
 
 <script>
 
+  import { mapState } from 'vuex'
   import commonConfigApi from '@/api/config/commonConfig'
   import kafkaApi from '@/api/operate/kafkaApi'
   import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
@@ -262,7 +263,13 @@
         this.findConsumerNames();
       }, 300)
     },//watch
-    computed: {},
+    computed: {
+      ...mapState({
+        currentUser: function (state) {
+          return state.user.name;
+        }
+      })
+    },
     methods: {
       //新增
       //数据库查询语句的相关操作

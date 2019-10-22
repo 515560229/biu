@@ -42,10 +42,12 @@
           <template slot-scope="scope">
             <el-tooltip content="删除" placement="top">
               <el-button @click="deleteData(scope.$index, scope.row)" size="mini" type="danger" icon="el-icon-delete"
+                         :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="编辑" placement="top">
               <el-button @click="handleEdit(scope.$index, scope.row)" size="mini" type="info" icon="el-icon-edit"
+                         :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                          circle plain></el-button>
             </el-tooltip>
             <el-tooltip content="复制" placement="top">
@@ -152,334 +154,341 @@
 
 <script>
 
-    import commonConfigApi from '@/api/config/commonConfig'
-    import kafkaApi from '@/api/operate/kafkaApi'
-    import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
-    import {confirm, pageParamNames, root} from '@/utils/constants'
-    import debounce from 'lodash/debounce'
-    import {getParameters} from '@/utils/templateParser'
-    import KafkaProducerResultPanel from '@/components/panel/KafkaProducerResultPanel'
+  import {mapState} from 'vuex'
+  import commonConfigApi from '@/api/config/commonConfig'
+  import kafkaApi from '@/api/operate/kafkaApi'
+  import {parseTime, resetTemp, isJsonString, deepClone} from '@/utils'
+  import {confirm, pageParamNames, root} from '@/utils/constants'
+  import debounce from 'lodash/debounce'
+  import {getParameters} from '@/utils/templateParser'
+  import KafkaProducerResultPanel from '@/components/panel/KafkaProducerResultPanel'
 
-    export default {
-        name: 'KafkaProducer',
-        components: {KafkaProducerResultPanel},
-        data() {
+  export default {
+    name: 'KafkaProducer',
+    components: {KafkaProducerResultPanel},
+    data() {
 
-            let validateNotNull = (rule, value, callback) => {
-                if (this.dialogStatus == 'create' && value === '') {
-                    callback(new Error('必填'));
-                } else {
-                    callback();
-                }
-            };
-            let maxTabCount = 15;
-            let initTabs = function () {
-                let result = [];
-                for (let i = 0; i < maxTabCount; i++) {
-                    let title = i + 1 + "";
-                    result.push({'title': title, 'name': title})
-                }
-                return result;
-            };
-
-            return {
-                type: "producer",
-                cellDetailsSize: {
-                    minRows: 16,
-                    maxRows: 16
-                },
-                //DB查询列表 相关的变量
-                producerNamesLoading: false,
-                producerNamesData: [],
-                producerNamesQuery: {
-                    key: '',
-                    type: "producer"
-                },
-                page1: {
-                    current: null,
-                    pages: null,
-                    size: 50,
-                    total: null
-                },
-                //tabs相关
-                currentTabName: '1',
-                nextTabName: '1',
-                tabDatas: initTabs(),
-                tabLoading: {},
-                //数据源查询相关变量
-                topicNames: [],
-                topicNamesLoading: false,
-                topicNamesPage: {
-                    current: null,
-                    pages: null,
-                    size: null,
-                    total: null
-                },
-                topicNamesQuery: {
-                    key: '',
-                    type: "kafka"
-                },
-                //查询结果相关
-                tableData: [],
-                //弹出框及新增和修改相关
-                dialogFormVisible: false,
-                dialogStatus: '',
-                temp: {
-                    id: null,
-                    type: null,
-                    name: null,
-                    desc: null,
-                    created: null,
-                    updated: null,
-                    producerConfig: {
-                        topic: null,
-                        message: null,
-                        broker: null,
-                        version: null,
-                        clusterName: null,
-                        parameters: []
-                    }
-                },
-                textMap: {
-                    update: '编辑',
-                    create: '新增'
-                },
-                rules: {},
-            }
-        },
-
-        created() {
-        },
-        mounted() {
-            this.findProducerNames();
-        },
-        beforeDestroy() {
-
-        },
-        destroyed() {
-        },
-
-        watch: {
-            //延时查询
-            'producerNamesQuery.key': debounce(function () {
-                this.page1.current = 1;//搜索重置页码
-                this.findProducerNames();
-            }, 300)
-        },//watch
-        computed: {},
-        methods: {
-            //新增
-            //数据库查询语句的相关操作
-            findProducerNames() {
-                this.producerNamesLoading = true;
-                commonConfigApi.queryCommonConfig(this.producerNamesQuery, this.page1).then(res => {
-                    this.producerNamesData = res.data.page.records;
-                    this.producerNamesLoading = false
-                    this.tableData = {};
-                    pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
-                })
-            },
-            //分页
-            handleSizeChange(val) {
-                this.page1.size = val;
-                this.findProducerNames();
-            },
-            handleCurrentChange(val) {
-                this.page1.current = val;
-                this.findProducerNames();
-            },
-            handleCreate() {
-                resetTemp(this.temp);
-                this.dialogStatus = 'create';
-                this.dialogFormVisible = true;
-                this.$nextTick(() => {
-                    this.$refs['dataForm'].clearValidate()
-                });
-                this.findTopic();
-            },
-            handleEdit(idx, entity) {
-                this.temp = deepClone(entity);
-                this.dialogStatus = 'update';
-                this.dialogFormVisible = true;
-                this.$nextTick(() => {
-                    this.$refs['dataForm'].clearValidate()
-                })
-                this.findTopic(this.temp.producerConfig.topic);
-            },
-            handleCopy(idx, sqlEntity) {
-                this.temp = deepClone(sqlEntity);
-                this.dialogStatus = 'create';
-                this.dialogFormVisible = true;
-                this.$nextTick(() => {
-                    this.$refs['dataForm'].clearValidate()
-                })
-            },
-            handleResetTabIndex() {
-                if (this.tableData.val0 != undefined) {
-                    this.tableData.val0 = undefined;
-                }
-                this.currentTabName = '1';
-                this.nextTabName = '1';
-            },
-            handleRowDbClick(row) {
-                let _parameters = row.producerConfig.parameters;
-                if (_parameters !== null && _parameters.length > 0) {
-                    this.$refs['sqlListTable'].toggleRowExpansion(row);
-                }
-            },
-            createData() {
-                this.generateParameter();
-                this.$refs['dataForm'].validate((valid) => {
-                    if (!valid) {
-                        return;
-                    }
-                    let tempData = Object.assign({}, this.temp)//copy obj
-                    tempData.type = this.type;
-                    commonConfigApi.addCommonConfig(tempData).then((res) => {
-                        this.temp = res.data.data;
-                        this.dialogFormVisible = false
-                        this.findProducerNames();
-                        this.$message.success("添加成功")
-                    })
-                })
-            },
-            updateData() {
-                this.generateParameter();
-                this.$refs['dataForm'].validate((valid) => {
-                    if (!valid) {
-                        return;
-                    }
-                    let tempData = Object.assign({}, this.temp)//copy obj
-                    tempData.type = this.type;
-                    commonConfigApi.updateCommonConfig(tempData).then((res) => {
-                        this.dialogFormVisible = false;
-                        this.findProducerNames();
-                        this.$message.success("保存成功");
-                    })
-                });
-            },
-            deleteData(idx, dbQueryName) {
-                this.$confirm('您确定要永久删除该查询语句？', '提示', confirm).then(() => {
-                    commonConfigApi.deleteCommonConfig(dbQueryName.id).then(res => {
-                        this.$message.success("删除成功");
-                        this.producerNamesData.splice(idx, 1);
-                    })
-                }).catch(() => {
-                    this.$message.info("已取消删除")
-                });
-            },
-            getParameter(arr, parameterName) {
-                if (!arr) {
-                    return '';
-                }
-                for (let i = 0; i < arr.length; i++) {
-                    if (parameterName === arr[i].name) {
-                        return arr[i];
-                    }
-                }
-            },
-            generateParameter() {
-                const tempEntity = this.temp;
-                const message = tempEntity.producerConfig.message;
-                let parameters = getParameters(message);
-                let newParameterObj = parameters ? parameters.reduce((obj, currentValue) => {
-                    obj[currentValue] = {
-                        name: currentValue,
-                        label: null,
-                        defaultValue: null
-                    };
-                    return obj;
-                }, {}) : {};
-                //原参数由数组转成对象
-                let oldParameters = tempEntity.producerConfig.parameters;
-                let oldParameterObj = oldParameters ? oldParameters.reduce((obj, currentValue) => {
-                    obj[currentValue.name] = currentValue;
-                    return obj;
-                }, {}) : undefined;
-                //重置 并使用新的参数信息
-                tempEntity.producerConfig.parameters = [];
-                let idx = 0;
-                for (let parameterName in newParameterObj) {
-                    if (oldParameterObj && oldParameterObj[parameterName]) {
-                        tempEntity.producerConfig.parameters.splice(idx, 0, oldParameterObj[parameterName]);
-                    } else {
-                        //新的参数
-                        tempEntity.producerConfig.parameters.splice(idx, 0, {
-                            name: parameterName,
-                            label: parameterName,
-                            defaultValue: null
-                        });
-                    }
-                    idx++;
-                }
-            },
-            validateParamters(row, idx) {
-                //验证参数是否为空
-                let _parameters = row.producerConfig.parameters;
-                let invalidCount = 0;
-                if (_parameters !== null && _parameters.length > 0) {
-                    for (let i in _parameters) {
-                        if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
-                            this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
-                            this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
-                            if (idx) {
-                                this.$set(this.tableData, "loading" + idx, false);
-                            }
-                            invalidCount++;
-                        }
-                    }
-                }
-                return invalidCount === 0;
-            },
-            executeData(idx, row) {
-                //展开
-                this.$refs['sqlListTable'].toggleRowExpansion(row, true);
-                //设置当前标签页
-                this.currentTabName = this.nextTabName;
-                //设置当前标签页的loading
-                this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), true);
-                //当前标签页数据置空
-                this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), undefined);
-                if (!this.validateParamters(row, idx)) {
-                    return;
-                }
-                kafkaApi.producer(row).then(res => {
-                    let responseData = res.data.data;
-
-                    //计算下个标签页
-                    this.nextTabName = parseInt(this.currentTabName) + 1 + "";
-                    if (parseInt(this.nextTabName) > this.tabDatas.length) {
-                        this.nextTabName = '1';//循环 超过则从1开始
-                    }
-
-                    this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), responseData);
-                    this.$set(this.tableData, "loading" + idx, false);
-                    //设置当前标签页的loading
-                    this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
-                }).catch(e => {
-                    console.log(e);
-                    //设置当前标签页的loading
-                    this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
-                    this.$set(this.tableData, "loading" + idx, false);
-                    //当前标签页数据置空
-                    this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {});
-                });
-            },
-            //查找TOPIC
-            findTopic(key) {
-                this.topicNamesLoading = true;
-                if (key) {
-                    this.topicNamesQuery.key = key;
-                } else {
-                    this.topicNamesQuery.key = '';
-                }
-                commonConfigApi.queryCommonConfig(this.topicNamesQuery, this.topicNamesPage).then(res => {
-                    this.topicNames = res.data.page.records
-                    this.topicNamesLoading = false
-                })
-            }
+      let validateNotNull = (rule, value, callback) => {
+        if (this.dialogStatus == 'create' && value === '') {
+          callback(new Error('必填'));
+        } else {
+          callback();
         }
+      };
+      let maxTabCount = 15;
+      let initTabs = function () {
+        let result = [];
+        for (let i = 0; i < maxTabCount; i++) {
+          let title = i + 1 + "";
+          result.push({'title': title, 'name': title})
+        }
+        return result;
+      };
+
+      return {
+        type: "producer",
+        cellDetailsSize: {
+          minRows: 16,
+          maxRows: 16
+        },
+        //DB查询列表 相关的变量
+        producerNamesLoading: false,
+        producerNamesData: [],
+        producerNamesQuery: {
+          key: '',
+          type: "producer"
+        },
+        page1: {
+          current: null,
+          pages: null,
+          size: 50,
+          total: null
+        },
+        //tabs相关
+        currentTabName: '1',
+        nextTabName: '1',
+        tabDatas: initTabs(),
+        tabLoading: {},
+        //数据源查询相关变量
+        topicNames: [],
+        topicNamesLoading: false,
+        topicNamesPage: {
+          current: null,
+          pages: null,
+          size: null,
+          total: null
+        },
+        topicNamesQuery: {
+          key: '',
+          type: "kafka"
+        },
+        //查询结果相关
+        tableData: [],
+        //弹出框及新增和修改相关
+        dialogFormVisible: false,
+        dialogStatus: '',
+        temp: {
+          id: null,
+          type: null,
+          name: null,
+          desc: null,
+          created: null,
+          updated: null,
+          producerConfig: {
+            topic: null,
+            message: null,
+            broker: null,
+            version: null,
+            clusterName: null,
+            parameters: []
+          }
+        },
+        textMap: {
+          update: '编辑',
+          create: '新增'
+        },
+        rules: {},
+      }
+    },
+
+    created() {
+    },
+    mounted() {
+      this.findProducerNames();
+    },
+    beforeDestroy() {
+
+    },
+    destroyed() {
+    },
+
+    watch: {
+      //延时查询
+      'producerNamesQuery.key': debounce(function () {
+        this.page1.current = 1;//搜索重置页码
+        this.findProducerNames();
+      }, 300)
+    },//watch
+    computed: {
+      ...mapState({
+        currentUser: function (state) {
+          return state.user.name;
+        }
+      })
+    },
+    methods: {
+      //新增
+      //数据库查询语句的相关操作
+      findProducerNames() {
+        this.producerNamesLoading = true;
+        commonConfigApi.queryCommonConfig(this.producerNamesQuery, this.page1).then(res => {
+          this.producerNamesData = res.data.page.records;
+          this.producerNamesLoading = false
+          this.tableData = {};
+          pageParamNames.forEach(name => this.$set(this.page1, name, res.data.page[name]))
+        })
+      },
+      //分页
+      handleSizeChange(val) {
+        this.page1.size = val;
+        this.findProducerNames();
+      },
+      handleCurrentChange(val) {
+        this.page1.current = val;
+        this.findProducerNames();
+      },
+      handleCreate() {
+        resetTemp(this.temp);
+        this.dialogStatus = 'create';
+        this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        });
+        this.findTopic();
+      },
+      handleEdit(idx, entity) {
+        this.temp = deepClone(entity);
+        this.dialogStatus = 'update';
+        this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+        this.findTopic(this.temp.producerConfig.topic);
+      },
+      handleCopy(idx, sqlEntity) {
+        this.temp = deepClone(sqlEntity);
+        this.dialogStatus = 'create';
+        this.dialogFormVisible = true;
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      handleResetTabIndex() {
+        if (this.tableData.val0 != undefined) {
+          this.tableData.val0 = undefined;
+        }
+        this.currentTabName = '1';
+        this.nextTabName = '1';
+      },
+      handleRowDbClick(row) {
+        let _parameters = row.producerConfig.parameters;
+        if (_parameters !== null && _parameters.length > 0) {
+          this.$refs['sqlListTable'].toggleRowExpansion(row);
+        }
+      },
+      createData() {
+        this.generateParameter();
+        this.$refs['dataForm'].validate((valid) => {
+          if (!valid) {
+            return;
+          }
+          let tempData = Object.assign({}, this.temp)//copy obj
+          tempData.type = this.type;
+          commonConfigApi.addCommonConfig(tempData).then((res) => {
+            this.temp = res.data.data;
+            this.dialogFormVisible = false
+            this.findProducerNames();
+            this.$message.success("添加成功")
+          })
+        })
+      },
+      updateData() {
+        this.generateParameter();
+        this.$refs['dataForm'].validate((valid) => {
+          if (!valid) {
+            return;
+          }
+          let tempData = Object.assign({}, this.temp)//copy obj
+          tempData.type = this.type;
+          commonConfigApi.updateCommonConfig(tempData).then((res) => {
+            this.dialogFormVisible = false;
+            this.findProducerNames();
+            this.$message.success("保存成功");
+          })
+        });
+      },
+      deleteData(idx, dbQueryName) {
+        this.$confirm('您确定要永久删除该查询语句？', '提示', confirm).then(() => {
+          commonConfigApi.deleteCommonConfig(dbQueryName.id).then(res => {
+            this.$message.success("删除成功");
+            this.producerNamesData.splice(idx, 1);
+          })
+        }).catch(() => {
+          this.$message.info("已取消删除")
+        });
+      },
+      getParameter(arr, parameterName) {
+        if (!arr) {
+          return '';
+        }
+        for (let i = 0; i < arr.length; i++) {
+          if (parameterName === arr[i].name) {
+            return arr[i];
+          }
+        }
+      },
+      generateParameter() {
+        const tempEntity = this.temp;
+        const message = tempEntity.producerConfig.message;
+        let parameters = getParameters(message);
+        let newParameterObj = parameters ? parameters.reduce((obj, currentValue) => {
+          obj[currentValue] = {
+            name: currentValue,
+            label: null,
+            defaultValue: null
+          };
+          return obj;
+        }, {}) : {};
+        //原参数由数组转成对象
+        let oldParameters = tempEntity.producerConfig.parameters;
+        let oldParameterObj = oldParameters ? oldParameters.reduce((obj, currentValue) => {
+          obj[currentValue.name] = currentValue;
+          return obj;
+        }, {}) : undefined;
+        //重置 并使用新的参数信息
+        tempEntity.producerConfig.parameters = [];
+        let idx = 0;
+        for (let parameterName in newParameterObj) {
+          if (oldParameterObj && oldParameterObj[parameterName]) {
+            tempEntity.producerConfig.parameters.splice(idx, 0, oldParameterObj[parameterName]);
+          } else {
+            //新的参数
+            tempEntity.producerConfig.parameters.splice(idx, 0, {
+              name: parameterName,
+              label: parameterName,
+              defaultValue: null
+            });
+          }
+          idx++;
+        }
+      },
+      validateParamters(row, idx) {
+        //验证参数是否为空
+        let _parameters = row.producerConfig.parameters;
+        let invalidCount = 0;
+        if (_parameters !== null && _parameters.length > 0) {
+          for (let i in _parameters) {
+            if (_parameters[i].defaultValue === undefined || _parameters[i].defaultValue === null || _parameters[i].defaultValue.trim() === '') {
+              this.$message.warning('参数[' + _parameters[i].label + "]不能为空");
+              this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+              if (idx) {
+                this.$set(this.tableData, "loading" + idx, false);
+              }
+              invalidCount++;
+            }
+          }
+        }
+        return invalidCount === 0;
+      },
+      executeData(idx, row) {
+        //展开
+        this.$refs['sqlListTable'].toggleRowExpansion(row, true);
+        //设置当前标签页
+        this.currentTabName = this.nextTabName;
+        //设置当前标签页的loading
+        this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), true);
+        //当前标签页数据置空
+        this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), undefined);
+        if (!this.validateParamters(row, idx)) {
+          return;
+        }
+        kafkaApi.producer(row).then(res => {
+          let responseData = res.data.data;
+
+          //计算下个标签页
+          this.nextTabName = parseInt(this.currentTabName) + 1 + "";
+          if (parseInt(this.nextTabName) > this.tabDatas.length) {
+            this.nextTabName = '1';//循环 超过则从1开始
+          }
+
+          this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), responseData);
+          this.$set(this.tableData, "loading" + idx, false);
+          //设置当前标签页的loading
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+        }).catch(e => {
+          console.log(e);
+          //设置当前标签页的loading
+          this.$set(this.tabLoading, "loading" + parseInt(this.currentTabName), false);
+          this.$set(this.tableData, "loading" + idx, false);
+          //当前标签页数据置空
+          this.$set(this.tableData, "val" + (parseInt(this.currentTabName) - 1), {});
+        });
+      },
+      //查找TOPIC
+      findTopic(key) {
+        this.topicNamesLoading = true;
+        if (key) {
+          this.topicNamesQuery.key = key;
+        } else {
+          this.topicNamesQuery.key = '';
+        }
+        commonConfigApi.queryCommonConfig(this.topicNamesQuery, this.topicNamesPage).then(res => {
+          this.topicNames = res.data.page.records
+          this.topicNamesLoading = false
+        })
+      }
     }
+  }
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>

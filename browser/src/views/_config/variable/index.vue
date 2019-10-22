@@ -35,11 +35,11 @@
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-tooltip content="编辑" placement="top">
-            <el-button @click="handleUpdate(scope.$index,scope.row)" size="medium" type="info" icon="el-icon-edit"
+            <el-button @click="handleUpdate(scope.$index,scope.row)" size="medium" type="info" icon="el-icon-edit" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                        circle plain></el-button>
           </el-tooltip>
           <el-tooltip content="删除" placement="top">
-            <el-button @click="handleDelete(scope.$index,scope.row)" size="medium" type="danger" icon="el-icon-delete"
+            <el-button @click="handleDelete(scope.$index,scope.row)" size="medium" type="danger" icon="el-icon-delete" :disabled="scope.row.creator === undefined || scope.row.creator === null || (currentUser !== 'admin' && scope.row.creator !== currentUser)"
                        circle plain></el-button>
           </el-tooltip>
         </template>
@@ -83,6 +83,7 @@
 
 <script>
 
+  import { mapState } from 'vuex'
   import variableApi from '@/api/config/variable'
   import {parseTime, resetTemp} from '@/utils'
   import {confirm, pageParamNames, root} from '@/utils/constants'
@@ -161,7 +162,13 @@
         this.fetchData()
       }, 500)
     },//watch
-
+    computed: {
+      ...mapState({
+        currentUser: function (state) {
+          return state.user.name;
+        }
+      })
+    },
     methods: {
       hasAdminRole(row) {
         if (row && row.roleList) {
