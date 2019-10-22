@@ -8,6 +8,8 @@ CREATE TABLE `t_variable_config`
   `updated` timestamp   NULL DEFAULT NULL COMMENT '修改时间',
   PRIMARY KEY (`name`)
 ) COMMENT ='变量配置表,存储一些变量';
+alter table t_variable_config add column `creator`  varchar(50)      DEFAULT NULL COMMENT '创建人';
+alter table t_variable_config add column `modifier` varchar(50)      DEFAULT NULL COMMENT '修改人';
 
 DROP TABLE IF EXISTS `t_common_config`;
 CREATE TABLE `t_common_config`
