@@ -127,24 +127,16 @@ public class KafkaTopicFetcher {
         }
 
         private List<TopicMetadata> fetchTopicMetadataFromBroker(String broker, String... selectedTopics) {
-            LOG.info(String.format("Fetching topic metadata from cluster %s", broker));
+            LOG.info("Fetching topic metadata from cluster {}", broker);
             SimpleConsumer consumer = null;
-            try {
-                consumer = createSimpleConsumer(broker);
-                for (int i = 0; i < NUM_TRIES_FETCH_TOPIC; i++) {
-                    try {
-                        return consumer.send(new TopicMetadataRequest(Arrays.asList(selectedTopics))).topicsMetadata();
-                    } catch (Exception e) {
-                        LOG.warn(String.format("Fetching topic metadata from cluster %s has failed %d times.", broker, i + 1), e);
-                        try {
-                            Thread.sleep((long) ((i + Math.random()) * 1000));
-                        } catch (InterruptedException e2) {
-                            LOG.warn("Caught InterruptedException: " + e2);
-                        }
-                    }
-                }
-            } finally {
-                if (consumer != null) {
+            List<SimpleConsumer> consumers = createSimpleConsumer(broker);
+            for (int i = 0; i < consumers.size(); i++) {
+                try {
+                    consumer = consumers.get(i);
+                    return consumer.send(new TopicMetadataRequest(Arrays.asList(selectedTopics))).topicsMetadata();
+                } catch (Exception e) {
+                    LOG.warn("Fetching topic metadata from cluster {} has failed at {}.", broker, i);
+                } finally {
                     consumer.close();
                 }
             }
@@ -301,9 +293,14 @@ public class KafkaTopicFetcher {
             }
         }
 
-        private SimpleConsumer createSimpleConsumer(String broker) {
-            List<String> hostPort = Splitter.on(':').trimResults().omitEmptyStrings().splitToList(broker);
-            return createSimpleConsumer(hostPort.get(0), Integer.parseInt(hostPort.get(1)));
+        private List<SimpleConsumer> createSimpleConsumer(String broker) {
+            List<SimpleConsumer> resultList = new ArrayList<>();
+            List<String> hostPortList = Splitter.on(",").trimResults().omitEmptyStrings().splitToList(broker);
+            for (String hostPortString : hostPortList) {
+                List<String> hostPort = Splitter.on(':').trimResults().omitEmptyStrings().splitToList(hostPortString);
+                resultList.add(createSimpleConsumer(hostPort.get(0), Integer.parseInt(hostPort.get(1))));
+            }
+            return resultList;
         }
 
         private SimpleConsumer createSimpleConsumer(HostAndPort hostAndPort) {
@@ -316,15 +313,4 @@ public class KafkaTopicFetcher {
                     DEFAULT_KAFKA_CLIENT_NAME);
         }
     }
-
-    public static void main(String[] args) {
-        KafkaTopicFetcher fetcher = new KafkaTopicFetcher();
-        KafkaClusterConfig clusterConfig = new KafkaClusterConfig();
-        clusterConfig.setBroker("10.202.24.5:9096");
-        List<KafkaTopic> kafkaTopics = fetcher.fetch(clusterConfig);
-
-        System.out.println(JSON.toJSONString(kafkaTopics, SerializerFeature.PrettyFormat));
-        System.out.println(kafkaTopics.size());
-    }
-
 }

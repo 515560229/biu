@@ -3,7 +3,6 @@ package com.abc.util.kafka;
 import com.abc.exception.MessageRuntimeException;
 import com.abc.util.kafka.examples.DatasetFilterUtils;
 import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
-import com.alibaba.fastjson.JSON;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
@@ -14,17 +13,13 @@ import kafka.javaapi.*;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
-import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 public class Kafka08OldConsumer extends KafkaConsumer {
