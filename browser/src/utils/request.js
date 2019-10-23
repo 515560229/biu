@@ -46,7 +46,7 @@ service.interceptors.response.use(
         })
       }else{
         //其它错误弹出错误信息
-        Message({ message: res.data.msg, type: 'error', duration: 60000});
+        Message({ message: res.data.msg, type: 'error', duration: 60000, showClose: true});
       }
       return Promise.reject('error');
     }
