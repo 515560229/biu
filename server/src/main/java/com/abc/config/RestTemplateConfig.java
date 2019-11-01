@@ -20,7 +20,11 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(new OkHttp3ClientHttpRequestFactory()));
+        OkHttp3ClientHttpRequestFactory requestFactory = new OkHttp3ClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(60 * 1000);
+        requestFactory.setReadTimeout(60 * 1000 * 5);
+        requestFactory.setWriteTimeout(60 * 1000 * 5);
+        RestTemplate restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(requestFactory));
         restTemplate.getInterceptors().add(new LoggingClientHttpRequestInterceptor());
 
         List<HttpMessageConverter<?>> list = restTemplate.getMessageConverters();

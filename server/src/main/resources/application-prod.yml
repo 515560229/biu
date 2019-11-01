@@ -91,6 +91,9 @@ kafka:
       - broker: 10.202.43.163:9096
         version: 0.8
         clusterName: sit-tds
+      - broker: 100.80.128.242:9092,100.80.128.244:9092,100.80.128.245:9092,100.80.128.246:9092
+          version: 0.8
+          clusterName: sit-inc_phmp_core_ame7g5wa01
 logging:
   path: ./logs
   level:
