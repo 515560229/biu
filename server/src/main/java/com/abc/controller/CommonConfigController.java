@@ -48,7 +48,11 @@ public class CommonConfigController {
         commonConfigVo.setModifier(CurrentUser.getUsername());
         commonConfigVo.setCreator(CurrentUser.getUsername());
 
-        boolean success = commonConfigService.insert(commonConfigVo.toEntity());
+        CommonConfig entiy = commonConfigVo.toEntity();
+        boolean success = commonConfigService.insert(entiy);
+        if (success) {
+            commonConfigVo.setId(entiy.getId());
+        }
         return Json.result(oper, success, commonConfigVo);
     }
 

@@ -38,6 +38,15 @@ public class KafkaController {
     @Autowired
     private FetchTopicMetaDataScheduler fetchTopicMetaDataScheduler;
 
+    @PermInfo("集群主题刷新")
+    @RequiresPermissions("a:kafka:refreshTopic")
+    @PostMapping(value = "/refreshTopic")
+    public Json refreshTopic(@RequestBody CommonConfigVo commonConfigVo) {
+        String oper = "refreshTopic";
+        fetchTopicMetaDataScheduler.fetchTopic(commonConfigVo.getKafkaClusterConfig());
+        return Json.succ(oper, true);
+    }
+
     @PermInfo("主题内容搜索")
     @RequiresPermissions("a:kafka:consumer")
     @PostMapping(value = "/consumer")

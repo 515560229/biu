@@ -5,6 +5,7 @@ import com.abc.entity.CommonConfig;
 import com.abc.service.CommonConfigService;
 import com.abc.util.kafka.KafkaTopic;
 import com.abc.util.kafka.KafkaTopicFetcher;
+import com.abc.vo.CommonConfigVo;
 import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
@@ -53,7 +54,7 @@ public class FetchTopicMetaDataScheduler {
     @PostConstruct
     public void init() {
         if (logger.isInfoEnabled()) {
-            logger.info("kafka cluster info: {}", JSON.toJSONString(configList));
+                logger.info("kafka cluster info: {}", JSON.toJSONString(configList));
         }
     }
 
@@ -61,15 +62,23 @@ public class FetchTopicMetaDataScheduler {
         return String.format("%s.%s", cluster, topicName);
     }
 
-    @Scheduled(cron = "0 0 9/4 ? * *")//现在是每天9,21点执行.
+    @Scheduled(cron = "0 0 9/4 ? * *")//现在是每天9,每隔4小时执行.
 //    @Scheduled(cron = "0/30 * * * * ?")
     public void fetchTopic() {
         logger.info("fetch topic job start.");
-        if (configList == null) {
+
+        EntityWrapper<CommonConfig> wrapper = new EntityWrapper<>();
+        wrapper.eq("`type`", ConfigType.KAFKA_CLUSTER_INFO.getValue());
+
+        List<CommonConfig> commonConfigList = commonConfigService.selectList(wrapper);
+
+        if (commonConfigList == null) {
             logger.info("kafka cluster is null");
             return;
         }
-        for (KafkaClusterConfig kafkaClusterConfig : configList) {
+        for (CommonConfig commonConfig : commonConfigList) {
+            CommonConfigVo commonConfigVo = new CommonConfigVo(commonConfig);
+            KafkaClusterConfig kafkaClusterConfig = commonConfigVo.getKafkaClusterConfig();
             logger.info("fetch topic meta data start. cluster: {}", kafkaClusterConfig.getClusterName());
             try {
                 fetchTopic(kafkaClusterConfig);
@@ -81,7 +90,7 @@ public class FetchTopicMetaDataScheduler {
 
     }
 
-    private void fetchTopic(KafkaClusterConfig kafkaClusterConfig) {
+    public void fetchTopic(KafkaClusterConfig kafkaClusterConfig) {
         List<KafkaTopic> kafkaTopics = kafkaTopicFetcher.fetch(kafkaClusterConfig);
         if (CollectionUtils.isNotEmpty(kafkaTopics)) {
             for (KafkaTopic kafkaTopic : kafkaTopics) {

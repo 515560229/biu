@@ -5,9 +5,11 @@ import com.abc.entity.CommonConfig;
 import com.abc.util.kafka.KafkaTopic;
 import com.abc.vo.commonconfigvoproperty.*;
 import com.alibaba.fastjson.JSON;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
 import org.apache.commons.beanutils.BeanUtils;
 
 @Data
@@ -24,6 +26,7 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
     private KafkaTopic kafkaTopic;
     private KafkaConsumerConfig consumerConfig;
     private KafkaProducerConfig producerConfig;
+    private KafkaClusterConfig kafkaClusterConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
@@ -40,6 +43,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             setConsumerConfig(JSON.parseObject(commonConfig.getValue(), KafkaConsumerConfig.class));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_PRODUCER_INFO.getValue())) {
             setProducerConfig(JSON.parseObject(commonConfig.getValue(), KafkaProducerConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_CLUSTER_INFO.getValue())) {
+            setKafkaClusterConfig(JSON.parseObject(commonConfig.getValue(), KafkaClusterConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -71,6 +76,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             commonConfig.setValue(JSON.toJSONString(getConsumerConfig()));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_TOPIC_PRODUCER_INFO.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getProducerConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.KAFKA_CLUSTER_INFO.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getKafkaClusterConfig()));
         }
         return commonConfig;
     }

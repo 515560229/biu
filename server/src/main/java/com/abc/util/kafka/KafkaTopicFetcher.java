@@ -1,5 +1,6 @@
 package com.abc.util.kafka;
 
+import com.abc.exception.MessageRuntimeException;
 import com.abc.util.kafka.examples.DatasetFilterUtils;
 import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
 import com.alibaba.fastjson.JSON;
@@ -297,6 +298,9 @@ public class KafkaTopicFetcher {
             List<SimpleConsumer> resultList = new ArrayList<>();
             List<String> hostPortList = Splitter.on(",").trimResults().omitEmptyStrings().splitToList(broker);
             for (String hostPortString : hostPortList) {
+                if (!hostPortString.contains(":")) {
+                    throw new MessageRuntimeException("broker格式不正确。正确的格式：127.0.0.1:9092");
+                }
                 List<String> hostPort = Splitter.on(':').trimResults().omitEmptyStrings().splitToList(hostPortString);
                 resultList.add(createSimpleConsumer(hostPort.get(0), Integer.parseInt(hostPort.get(1))));
             }

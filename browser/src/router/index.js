@@ -227,6 +227,12 @@ export const asyncRouterMap = [
     meta: {title: 'Kafka', icon: 'chart'},
     children: [
       {
+        path: 'kafkaCluster',
+        name: 'kafkaCluster',
+        component: _import('_kafka/kafkaCluster'),
+        meta: {title: '集群管理', icon: 'chart', noCache: false}
+      },
+      {
         path: 'consumer',
         name: 'consumer',
         component: _import('_kafka/consumer'),

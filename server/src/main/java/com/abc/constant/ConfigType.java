@@ -5,6 +5,7 @@ public enum ConfigType {
     DB_QUERY_CONFIG("dbQuery"),
     HTTP_CONFIG("http"),
     WS_CONFIG("ws"),
+    KAFKA_CLUSTER_INFO("kafClus"),
     KAFKA_TOPIC_INFO("kafka"),
     KAFKA_TOPIC_CONSUMER_INFO("consumer"),
     KAFKA_TOPIC_PRODUCER_INFO("producer"),

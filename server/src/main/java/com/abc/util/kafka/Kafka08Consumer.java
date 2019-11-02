@@ -20,6 +20,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Deprecated
 public class Kafka08Consumer extends KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka08Consumer.class);
     private static final int consumeHandleThreads = 2;

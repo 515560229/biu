@@ -8,13 +8,13 @@ server:
         name: BIUSID
 spring:
   redis:
-    host: localhost
+    host: 192.168.137.100
     port: 6379
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/${db}?characterEncoding=UTF-8&useSSL=false
+    url: jdbc:mysql://192.168.137.100:3306/${db}?characterEncoding=UTF-8&useSSL=false
     username: root
-    password:
+    password: 123456
     druid:
       initialSize: 5
       minIdle: 5
@@ -31,9 +31,12 @@ spring:
 kafka:
   cluster:
     configList:
-      - broker: localhost:9092
+      - broker: 192.168.137.100:9092
         version: 0.8
         clusterName: sit-bus
+      - broker: 192.168.137.100:9093
+        version: 1.1
+        clusterName: sit-my
 
 logging:
   path: ./logs

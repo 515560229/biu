@@ -16,5 +16,12 @@ export default {
       data
     })
   },
+  refreshTopic(data) {
+    return request({
+      url: '/kafka/executor/refreshTopic',
+      method: 'post',
+      data
+    })
+  }
 }
 
