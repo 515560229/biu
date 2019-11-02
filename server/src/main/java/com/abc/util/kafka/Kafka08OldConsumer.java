@@ -6,32 +6,44 @@ import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
-import kafka.api.PartitionFetchInfo;
-import kafka.api.PartitionOffsetRequestInfo;
-import kafka.common.TopicAndPartition;
-import kafka.javaapi.*;
-import kafka.javaapi.consumer.SimpleConsumer;
-import kafka.javaapi.message.ByteBufferMessageSet;
-import kafka.message.MessageAndOffset;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+
+import kafka.api.PartitionFetchInfo;
+import kafka.api.PartitionOffsetRequestInfo;
+import kafka.common.TopicAndPartition;
+import kafka.javaapi.FetchRequest;
+import kafka.javaapi.FetchResponse;
+import kafka.javaapi.OffsetRequest;
+import kafka.javaapi.OffsetResponse;
+import kafka.javaapi.PartitionMetadata;
+import kafka.javaapi.TopicMetadata;
+import kafka.javaapi.TopicMetadataRequest;
+import kafka.javaapi.consumer.SimpleConsumer;
+import kafka.javaapi.message.ByteBufferMessageSet;
+import kafka.message.MessageAndOffset;
 
 public class Kafka08OldConsumer extends KafkaConsumer {
     private static final Logger logger = LoggerFactory.getLogger(Kafka08OldConsumer.class);
 
     private static final ThreadLocal<SimpleConsumer> THEAD_CONSUMER = new ThreadLocal<>();
 
-    private static final int DEFAULT_KAFKA_TIMEOUT_VALUE = 30000;
-    private static final int DEFAULT_KAFKA_BUFFER_SIZE = 1024 * 1024 * 10;
+    private static final int DEFAULT_KAFKA_TIMEOUT_VALUE = 1000 * 5;
+    private static final int DEFAULT_KAFKA_BUFFER_SIZE = 8 * 1024;
     private static final String DEFAULT_KAFKA_CLIENT_NAME = GROUP_ID;
     private static final int DEFAULT_KAFKA_FETCH_REQUEST_CORRELATION_ID = 11;//-1
-    private static final int DEFAULT_KAFKA_FETCH_REQUEST_MIN_BYTES = 1024;
+    private static final int DEFAULT_KAFKA_FETCH_REQUEST_MIN_BYTES = 8;
     private static final int NUM_TRIES_FETCH_TOPIC = 3;
     private static final int NUM_TRIES_FETCH_OFFSET = 3;
     private static final long SEARCH_OFFSET_SIZE = 5000;
@@ -81,6 +93,8 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                     }
                 } catch (KafkaOffsetRetrievalFailureException e) {
                     //do nothing
+                } catch (Exception io){
+                    //do nothing
                 } finally {
                     consumer.close();
                 }
@@ -117,6 +131,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                 MessageAndOffset last = null;
                 while (iteratorFromFetchResponse != null && iteratorFromFetchResponse.hasNext()) {
                     last = iteratorFromFetchResponse.next();
+                    logger.debug("fetch topic {} partition {} fetchTimes: {} offsetStart {} current {}", partition.getTopicName(), partition.getId(), fetchCountValue, nextOffset, last.offset());
                     ByteBuffer payload = last.message().payload();
                     byte[] bytes = new byte[payload.limit()];
                     payload.get(bytes);
@@ -147,6 +162,8 @@ public class Kafka08OldConsumer extends KafkaConsumer {
     }
 
     private FetchRequest createFetchRequest(KafkaPartition partition, long nextOffset) {
+        // 关于fetchSize  https://blog.csdn.net/wangqyoho/article/details/60571237
+        // 关于minBytes https://blog.csdn.net/stark_summer/article/details/50203133
         TopicAndPartition topicAndPartition = new TopicAndPartition(partition.getTopicName(), partition.getId());
         PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(nextOffset, DEFAULT_KAFKA_BUFFER_SIZE);
         Map<TopicAndPartition, PartitionFetchInfo> fetchInfo = Collections.singletonMap(topicAndPartition, partitionFetchInfo);

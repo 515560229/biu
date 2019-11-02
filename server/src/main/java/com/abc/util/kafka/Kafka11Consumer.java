@@ -35,8 +35,8 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 
-        props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 1000 * 30);
-        props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000 * 40);
+        props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 1000 * 3);
+        props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000 * 3);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 1000 * 10);
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);

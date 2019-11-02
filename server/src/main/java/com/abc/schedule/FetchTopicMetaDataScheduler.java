@@ -9,20 +9,17 @@ import com.abc.vo.CommonConfigVo;
 import com.abc.vo.commonconfigvoproperty.KafkaClusterConfig;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import lombok.Setter;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -34,39 +31,32 @@ public class FetchTopicMetaDataScheduler {
     @Autowired
     private KafkaTopicFetcher kafkaTopicFetcher;
 
-    @Setter
-    private List<KafkaClusterConfig> configList;
-
     @Autowired
     private CommonConfigService commonConfigService;
 
     public KafkaClusterConfig getByClusterName(String clusterName) {
-        if (CollectionUtils.isNotEmpty(configList)) {
-            for (KafkaClusterConfig kafkaClusterConfig : configList) {
-                if (kafkaClusterConfig.getClusterName().equals(clusterName)) {
-                    return kafkaClusterConfig;
-                }
-            }
-        }
-        return null;
-    }
-
-    @PostConstruct
-    public void init() {
-        if (logger.isInfoEnabled()) {
-                logger.info("kafka cluster info: {}", JSON.toJSONString(configList));
-        }
+        return loadKafkaClusterConfigByName(clusterName);
     }
 
     private String toName(String cluster, String topicName) {
         return String.format("%s.%s", cluster, topicName);
     }
 
-    @Scheduled(cron = "0 0 9/4 ? * *")//现在是每天9,每隔4小时执行.
-//    @Scheduled(cron = "0/30 * * * * ?")
-    public void fetchTopic() {
-        logger.info("fetch topic job start.");
+    private KafkaClusterConfig loadKafkaClusterConfigByName(String name) {
+        EntityWrapper<CommonConfig> wrapper = new EntityWrapper<>();
+        wrapper.eq("`type`", ConfigType.KAFKA_CLUSTER_INFO.getValue());
+        wrapper.eq("name", name);
 
+        List<CommonConfig> commonConfigList = commonConfigService.selectList(wrapper);
+
+        if (commonConfigList == null) {
+            logger.info("kafka cluster is null");
+            return null;
+        }
+        return new CommonConfigVo(commonConfigList.get(0)).getKafkaClusterConfig();
+    }
+
+    private List<KafkaClusterConfig> loadAllKafkaClusterConfig() {
         EntityWrapper<CommonConfig> wrapper = new EntityWrapper<>();
         wrapper.eq("`type`", ConfigType.KAFKA_CLUSTER_INFO.getValue());
 
@@ -74,11 +64,27 @@ public class FetchTopicMetaDataScheduler {
 
         if (commonConfigList == null) {
             logger.info("kafka cluster is null");
-            return;
+            return Collections.emptyList();
         }
+        List<KafkaClusterConfig> resultList = new ArrayList<>(commonConfigList.size());
         for (CommonConfig commonConfig : commonConfigList) {
             CommonConfigVo commonConfigVo = new CommonConfigVo(commonConfig);
-            KafkaClusterConfig kafkaClusterConfig = commonConfigVo.getKafkaClusterConfig();
+            resultList.add(commonConfigVo.getKafkaClusterConfig());
+        }
+        return resultList;
+    }
+
+    @Scheduled(cron = "0 0 9/4 ? * *")//现在是每天9,每隔4小时执行.
+//    @Scheduled(cron = "0/30 * * * * ?")
+    public void fetchTopic() {
+        logger.info("fetch topic job start.");
+
+        List<KafkaClusterConfig> configList = loadAllKafkaClusterConfig();
+        if (configList == null) {
+            logger.info("kafka cluster is null");
+            return;
+        }
+        for (KafkaClusterConfig kafkaClusterConfig : configList) {
             logger.info("fetch topic meta data start. cluster: {}", kafkaClusterConfig.getClusterName());
             try {
                 fetchTopic(kafkaClusterConfig);
