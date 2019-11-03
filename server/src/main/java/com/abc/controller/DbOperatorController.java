@@ -8,7 +8,6 @@ import com.abc.util.freemarker.FreemarkerUtils;
 import com.abc.vo.CommonConfigVo;
 import com.abc.vo.Json;
 import com.abc.vo.commonconfigvoproperty.DbQueryConfig;
-import com.abc.vo.commonconfigvoproperty.HttpConfig;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.mysql.jdbc.Driver;
 import freemarker.template.TemplateException;
@@ -97,6 +96,11 @@ public class DbOperatorController {
             List<Map<String, Object>> list = jdbcTemplate.query(getLimitSql(sql), new ColumnMapRowMapper());
             modelMap.put("dataList", list);
             return Json.result("dbOperateExecuteSelect", true, modelMap);
+        } else if (isDirectQuery(sql)){
+            // show create table xxx, show variables like '%log%'
+            List<Map<String, Object>> list = jdbcTemplate.query(sql, new ColumnMapRowMapper());
+            modelMap.put("dataList", list);
+            return Json.result("dbOperateExecuteDirectSelect", true, modelMap);
         } else {
             int effectRowCount = jdbcTemplate.update(sql);
             List<Map<String, Object>> list = new ArrayList<>();
@@ -189,6 +193,12 @@ public class DbOperatorController {
             return true;
         }
         return false;
+    }
+
+    private boolean isDirectQuery(String sql) {
+        return sql.trim().substring(0, 4).equalsIgnoreCase("show")
+                || sql.trim().substring(0, 6).equalsIgnoreCase("explain")
+                || sql.trim().substring(0, 4).equalsIgnoreCase("desc");
     }
 
     private boolean isDMLSQL(String sql) {
