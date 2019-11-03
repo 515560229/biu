@@ -9,6 +9,8 @@ public enum ConfigType {
     KAFKA_TOPIC_INFO("kafka"),
     KAFKA_TOPIC_CONSUMER_INFO("consumer"),
     KAFKA_TOPIC_PRODUCER_INFO("producer"),
+    ZOOKEEPER_CLUSTER_INFO("zkClus"),
+    ZOOKEEPER_QUERY("zkQuery")
     ;
 
     private String value;

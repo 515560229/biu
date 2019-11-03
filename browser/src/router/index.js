@@ -222,6 +222,25 @@ export const asyncRouterMap = [
     ]
   },
   {
+    path: '/zookeeper',
+    component: Layout,
+    meta: {title: 'Zookeeper', icon: 'chart'},
+    children: [
+      {
+        path: 'zookeeperCluster',
+        name: 'zookeeperCluster',
+        component: _import('_zookeeper/zookeeperCluster'),
+        meta: {title: 'zk集群', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'consumer',
+        name: 'consumer',
+        component: _import('_kafka/consumer'),
+        meta: {title: 'zk读取', icon: 'chart', noCache: false}
+      }
+    ]
+  },
+  {
     path: '/kafka',
     component: Layout,
     meta: {title: 'Kafka', icon: 'chart'},

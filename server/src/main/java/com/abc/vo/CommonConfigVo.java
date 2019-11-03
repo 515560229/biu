@@ -27,6 +27,8 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
     private KafkaConsumerConfig consumerConfig;
     private KafkaProducerConfig producerConfig;
     private KafkaClusterConfig kafkaClusterConfig;
+    private ZkClusterConfig zkClusterConfig;
+    private ZkQueryConfig zkQueryConfig;
 
     public CommonConfigVo(CommonConfig commonConfig) {
         if (commonConfig.getType().equals(ConfigType.DB_CONFIG.getValue())) {
@@ -45,6 +47,10 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             setProducerConfig(JSON.parseObject(commonConfig.getValue(), KafkaProducerConfig.class));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_CLUSTER_INFO.getValue())) {
             setKafkaClusterConfig(JSON.parseObject(commonConfig.getValue(), KafkaClusterConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.ZOOKEEPER_CLUSTER_INFO.getValue())) {
+            setZkClusterConfig(JSON.parseObject(commonConfig.getValue(), ZkClusterConfig.class));
+        } else if (commonConfig.getType().equals(ConfigType.ZOOKEEPER_QUERY.getValue())) {
+            setZkQueryConfig(JSON.parseObject(commonConfig.getValue(), ZkQueryConfig.class));
         }
         try {
             BeanUtils.copyProperties(this, commonConfig);
@@ -78,6 +84,10 @@ public class CommonConfigVo extends CommonConfig implements PageVo {
             commonConfig.setValue(JSON.toJSONString(getProducerConfig()));
         } else if (commonConfig.getType().equals(ConfigType.KAFKA_CLUSTER_INFO.getValue())) {
             commonConfig.setValue(JSON.toJSONString(getKafkaClusterConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.ZOOKEEPER_CLUSTER_INFO.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getZkClusterConfig()));
+        } else if (commonConfig.getType().equals(ConfigType.ZOOKEEPER_QUERY.getValue())) {
+            commonConfig.setValue(JSON.toJSONString(getZkQueryConfig()));
         }
         return commonConfig;
     }
