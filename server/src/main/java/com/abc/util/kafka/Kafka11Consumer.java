@@ -35,9 +35,10 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 
-        props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 1000 * 3);
         props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000 * 3);
-        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 1000 * 10);
+        props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 1000 * 2);
+        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 1000 * 2);
+        props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 1000);
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, GROUP_ID);
@@ -129,7 +130,7 @@ public class Kafka11Consumer extends com.abc.util.kafka.KafkaConsumer {
                 executorConsumer.close();
                 //判断是否需要退出
                 int messageSize = messages.size();
-                if (messageSize >= MAX_MESSAGE_COUNT || (System.currentTimeMillis() - start) / 1000 > WAIT_MAX_SECONDS) {
+                if (messageSize >= MAX_MESSAGE_COUNT || (System.currentTimeMillis() - start) / 1000 > getWaitMaxSeconds()) {
                     logger.info("partition: {} fetch break. messageSize:{}", topicPartition.partition(), messageSize);
                 }
             });

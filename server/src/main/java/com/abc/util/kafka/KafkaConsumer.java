@@ -2,6 +2,7 @@ package com.abc.util.kafka;
 
 import com.abc.vo.commonconfigvoproperty.KafkaConsumerConfig;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -11,11 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class KafkaConsumer {
-    protected static final int WAIT_MAX_SECONDS = 30;
+    private static final int WAIT_MAX_SECONDS = 30;
     protected static final int MAX_MESSAGE_COUNT = 50;
     protected static final String GROUP_ID = "__BIU__";
 
     protected KafkaConsumerConfig kafkaConsumerConfig;
+    @Setter
+    protected int waitMaxSeconds;
 
     private ThreadLocal<Long> fetchCount = ThreadLocal.withInitial(() -> 0L);//kafka 推的形式, fetch的次数
     @Getter
@@ -77,5 +80,13 @@ public abstract class KafkaConsumer {
         return UUID.randomUUID().toString();
     }
 
+    public int getWaitMaxSeconds() {
+        if (waitMaxSeconds <= 0) {
+            return WAIT_MAX_SECONDS;
+        }
+        return waitMaxSeconds;
+    }
+
     public abstract void consume();
+
 }

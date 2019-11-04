@@ -85,7 +85,7 @@ public class Kafka08OldConsumer extends KafkaConsumer {
                         pageIndex++;
                         //判断是否需要退出
                         int messageSize = messages.size();
-                        if (messageSize >= MAX_MESSAGE_COUNT || (System.currentTimeMillis() - start) / 1000 > WAIT_MAX_SECONDS) {
+                        if (messageSize >= MAX_MESSAGE_COUNT || (System.currentTimeMillis() - start) / 1000 > getWaitMaxSeconds()) {
                             logger.info("partition: {} fetch break. messageSize:{}", kafkaPartition.getId(), messageSize);
                             break;
                         }

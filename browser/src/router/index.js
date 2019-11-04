@@ -233,9 +233,9 @@ export const asyncRouterMap = [
         meta: {title: 'zk集群', icon: 'chart', noCache: false}
       },
       {
-        path: 'consumer',
-        name: 'consumer',
-        component: _import('_kafka/consumer'),
+        path: 'zookeeperRead',
+        name: 'zookeeperRead',
+        component: _import('_zookeeper/zookeeperRead'),
         meta: {title: 'zk读取', icon: 'chart', noCache: false}
       }
     ]

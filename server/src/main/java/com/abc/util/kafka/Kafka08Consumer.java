@@ -88,7 +88,7 @@ public class Kafka08Consumer extends KafkaConsumer {
         int waitSeconds = 1;
         while (true) {
             int messageSize = messages.size();
-            if (messageSize >= MAX_MESSAGE_COUNT || waitSeconds > WAIT_MAX_SECONDS) {
+            if (messageSize >= MAX_MESSAGE_COUNT || waitSeconds > getWaitMaxSeconds()) {
                 logger.info("fetch break. messageSize:{}, waitSeconds: {}", messageSize, waitSeconds);
                 break;
             }

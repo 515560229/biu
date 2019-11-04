@@ -2,7 +2,7 @@
   <el-row>
     <el-row v-if="value !== undefined && value != null" style="font-size: 12px;">
       <el-row>
-        共扫描 {{value.totalCount}} 条消息
+        共扫描{{value.topic}} {{value.totalCount}} 条消息
       </el-row>
       <!-- 结果面板 -->
       <el-table style="width: 100%;height: 95%;"

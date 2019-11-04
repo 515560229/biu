@@ -74,9 +74,11 @@ public class KafkaController {
         } else {
             kafkaConsumer = new Kafka11Consumer(consumerConfig);
         }
+        kafkaConsumer.setWaitMaxSeconds(10);
         kafkaConsumer.consume();
         Map<String, KafkaMessage> messages = kafkaConsumer.getMessages();
         AtomicLong totalCount = kafkaConsumer.getTotalCount();
+        responseObj.put("topic", consumerConfig.getTopic());
         responseObj.put("totalCount", totalCount.get());
         responseObj.put("messages", messages.values());
         return Json.succ(oper, responseObj);
