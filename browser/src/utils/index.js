@@ -392,8 +392,9 @@ function renderJsonString(str) {
     if (typeof value === "object" || Array.isArray(value)) {
       //如果string转换后是合法的对象,则将该key指定这个对象
       renderJson(value);
+      return value;
     }
-    return value;
+    return str;
   } catch (e) {
     return str;//转换json出错，非json串等原样返回
   }

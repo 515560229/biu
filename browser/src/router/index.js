@@ -249,19 +249,19 @@ export const asyncRouterMap = [
         path: 'kafkaCluster',
         name: 'kafkaCluster',
         component: _import('_kafka/kafkaCluster'),
-        meta: {title: '集群管理', icon: 'chart', noCache: false}
+        meta: {title: 'Kafka集群', icon: 'chart', noCache: false}
       },
       {
         path: 'consumer',
         name: 'consumer',
         component: _import('_kafka/consumer'),
-        meta: {title: '读取消息', icon: 'chart', noCache: false}
+        meta: {title: 'Kafka读取', icon: 'chart', noCache: false}
       },
       {
         path: 'producer',
         name: 'producer',
         component: _import('_kafka/producer'),
-        meta: {title: '写入消息', icon: 'chart', noCache: false}
+        meta: {title: 'Kafka写入', icon: 'chart', noCache: false}
       }
     ]
   },
