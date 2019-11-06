@@ -21,7 +21,8 @@ public class FreemarkerUtils {
                 , new UUIDFunction()
                 , new RandomIntFunction()
                 , new BlankStringFunction()
-                , new GetVarFunction())
+                , new GetVarFunction()
+                , new ToArrayFunction())
                 .forEach(fun -> cfg.setSharedVariable(fun.getFunctionName(), fun));
     }
 
