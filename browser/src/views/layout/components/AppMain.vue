@@ -25,3 +25,8 @@
     }
   }
 </script>
+<style rel="stylesheet/scss" lang="scss">
+  .dyncInputClass {
+    width: 600px;
+  }
+</style>

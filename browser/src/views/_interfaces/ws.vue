@@ -85,7 +85,7 @@
                   <el-form-item v-for="(param, index) in props.row.wsConfig.parameters"
                                 :key="'param' + props.$index + '_' + index">
                     <el-tooltip class="item" effect="dark" :content="param.label" placement="right-start">
-                      <el-input v-model="param.defaultValue" :placeholder="param.label"
+                      <el-input v-model="param.defaultValue" :placeholder="param.label" class="dyncInputClass"
                                 style="margin: 4px;"></el-input>
                     </el-tooltip>
                   </el-form-item>
