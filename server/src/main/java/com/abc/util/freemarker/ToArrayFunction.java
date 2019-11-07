@@ -2,6 +2,7 @@ package com.abc.util.freemarker;
 
 import com.abc.exception.MessageRuntimeException;
 import com.alibaba.fastjson.JSON;
+import freemarker.template.TemplateModel;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class ToArrayFunction extends CustomFunction {
         }
         if (paramList.size() == 1) {
             //只有一个参数场景
-            String s = (String) paramList.get(0);
+            String s = FreemarkerUtils.getObject((TemplateModel) paramList.get(0)).toString();
             String[] split = s.split(SPLIT_STR);
             List<String> arr = new ArrayList<>();
             for (String s1 : split) {
