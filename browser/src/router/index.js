@@ -281,6 +281,12 @@ export const asyncRouterMap = [
         name: 'xmlFormat',
         component: _import('_others/xmlFormat'),
         meta: {title: 'XML格式化', icon: 'chart', noCache: false}
+      },
+      {
+        path: 'qrCode',
+        name: 'qrCode',
+        component: _import('_others/qrCode'),
+        meta: {title: '生成二维码', icon: 'chart', noCache: false}
       }
     ]
   },
