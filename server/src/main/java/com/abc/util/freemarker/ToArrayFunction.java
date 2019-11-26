@@ -31,7 +31,7 @@ public class ToArrayFunction extends CustomFunction {
         }
         if (paramList.size() == 1) {
             //只有一个参数场景
-            String s = FreemarkerUtils.getObject((TemplateModel) paramList.get(0)).toString();
+            String s = FreemarkerUtils.getObject(paramList.get(0)).toString();
             String[] split = s.split(SPLIT_STR);
             List<String> arr = new ArrayList<>();
             for (String s1 : split) {
@@ -42,8 +42,8 @@ public class ToArrayFunction extends CustomFunction {
         }
         if (paramList.size() == 2) {
             //有2个参数场景
-            String s = (String) paramList.get(0);
-            String type = (String) paramList.get(1);
+            String s = FreemarkerUtils.getObject(paramList.get(0)).toString();
+            String type = FreemarkerUtils.getObject(paramList.get(1)).toString();
             String[] split = s.split(SPLIT_STR);
             List<Object> arr = new ArrayList<>();
             for (String s1 : split) {

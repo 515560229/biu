@@ -55,6 +55,10 @@ public class FreemarkerUtils {
         throw new MessageRuntimeException("参数格式不正确");
     }
 
+    static Object getObject(Object model) {
+        return getObject(((TemplateModel) model));
+    }
+
     public static void main(String[] args) throws IOException, TemplateException {
         String template = "uuid()\t${uuid()}\n" +
                 "now()\t${now()}\n" +
