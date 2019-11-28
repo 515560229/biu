@@ -20,7 +20,7 @@
                   <el-input type="textarea" rows="30" v-model="tableData['input' + index]" placeholder="请输入要格式化的json"></el-input>
                 </el-aside>
                 <el-main width="300px" class="padding0">
-                  <div v-show="tableData['data' + index]">
+                  <div v-show="tableData['data' + index]" style="width: 100%;word-break: break-word;">
                     <vue-json-pretty
                       :data="tableData['data' + index]"
                       :showLength=true
@@ -62,8 +62,7 @@
       return {
         //tabs相关
         currentTabName: "1",
-        tableData: {
-        },
+        tableData: {},
         tabDatas: initTabs()
       }
     },
@@ -119,5 +118,10 @@
   .padding0 {
     padding: 0 0 0 20px;
     margin: 0 auto;
+  }
+
+  .vjs-tree .vjs-value__string {
+    color: #13ce66;
+    word-wrap: break-word;
   }
 </style>
