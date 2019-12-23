@@ -7,7 +7,7 @@ import Code from '@/utils/code'
 // create an axios instance
 const service = axios.create({
   baseURL: process.env.BASE_API, // api的base_url
-  timeout: 60000, // request timeout
+  timeout: 0, // request timeout
   withCredentials: true //使前台能够保存cookie
 })
 
