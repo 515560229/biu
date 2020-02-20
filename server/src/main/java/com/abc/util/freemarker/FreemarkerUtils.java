@@ -22,6 +22,7 @@ public class FreemarkerUtils {
                 , new RandomIntFunction()
                 , new BlankStringFunction()
                 , new GetVarFunction()
+                , new JsonStringToString()
                 , new ToArrayFunction())
                 .forEach(fun -> cfg.setSharedVariable(fun.getFunctionName(), fun));
     }

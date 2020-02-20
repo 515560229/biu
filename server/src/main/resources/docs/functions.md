@@ -77,3 +77,11 @@ ${函数名(参数1,参数2...)}
 不定长参数
 2. 1个参数：用,分隔成数组，默认为string。如：${toArray(5,2)} return: "5","2"
 3. 2个参数：用,分隔成数组，支持定义类型。可选类型：string,number。如：${toArray("5,2", "number")}	return: 5,2
+
+## 9. jsonStringToString
+### 描述
+将一串Json的字符串转换成转义后的字符串。
+
+### 参数与返回值
+定长参数,仅支持一个参数.
+如: {"username":"zhangsan"} => {\"username\":\"zhangsan\"}
